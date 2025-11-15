@@ -654,14 +654,11 @@ This means you can:
 
 ---
 
-## 👨‍💻 Authors & Team
+## 👨‍💻 Author
 
 **Project Creator & Maintainer**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
-
-**Contributors**
-- See [Contributors Page](https://github.com/yourusername/ServiceLink/graphs/contributors)
+- GitHub: [@syedgoharhussain](https://github.com/syedgoharhussain)
+- Email: syedgohar933036@gmail.com
 
 ---
 
