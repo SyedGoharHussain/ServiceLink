@@ -175,8 +175,8 @@ Before you begin, ensure you have the following installed:
 #### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/mids_project.git
-cd mids_project
+git clone https://github.com/yourusername/ServiceLink.git
+cd ServiceLink
 ```
 
 #### Step 2: Install Dependencies
@@ -595,8 +595,8 @@ We welcome contributions from the community! Here's how you can help:
 1. **Fork** the repository
 2. **Clone** your fork locally
    ```bash
-   git clone https://github.com/your-username/mids_project.git
-   cd mids_project
+   git clone https://github.com/your-username/ServiceLink.git
+   cd ServiceLink
    ```
 3. **Create a branch** for your feature
    ```bash
@@ -661,7 +661,7 @@ This means you can:
 - Email: your.email@example.com
 
 **Contributors**
-- See [Contributors Page](https://github.com/yourusername/mids_project/graphs/contributors)
+- See [Contributors Page](https://github.com/yourusername/ServiceLink/graphs/contributors)
 
 ---
 
@@ -696,9 +696,9 @@ Special thanks to:
 **If you have questions or need assistance:**
 
 1. 📖 Check the [Documentation](#-documentation) first
-2. 🔍 Search [Existing Issues](https://github.com/yourusername/mids_project/issues)
-3. 💬 Join our [Discussions](https://github.com/yourusername/mids_project/discussions)
-4. 🐛 Report bugs via [New Issue](https://github.com/yourusername/mids_project/issues/new)
+2. 🔍 Search [Existing Issues](https://github.com/yourusername/ServiceLink/issues)
+3. 💬 Join our [Discussions](https://github.com/yourusername/ServiceLink/discussions)
+4. 🐛 Report bugs via [New Issue](https://github.com/yourusername/ServiceLink/issues/new)
 5. 📧 Email: support@servicelink.com
 
 ### 🐛 Found a Bug?
@@ -744,7 +744,7 @@ If you find ServiceLink useful or interesting, please consider:
 
 ### Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/mids_project&type=Date)](https://star-history.com/#yourusername/mids_project&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/ServiceLink&type=Date)](https://star-history.com/#yourusername/ServiceLink&Date)
 
 </div>
 
@@ -768,10 +768,10 @@ If you find ServiceLink useful or interesting, please consider:
 
 ---
 
-[Report Bug](https://github.com/yourusername/mids_project/issues) • 
-[Request Feature](https://github.com/yourusername/mids_project/issues) • 
+[Report Bug](https://github.com/yourusername/ServiceLink/issues) • 
+[Request Feature](https://github.com/yourusername/ServiceLink/issues) • 
 [Documentation](QUICKSTART.md) • 
-[Discussions](https://github.com/yourusername/mids_project/discussions)
+[Discussions](https://github.com/yourusername/ServiceLink/discussions)
 
 ---
 
