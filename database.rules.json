@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "chats": {
+      ".read": "auth != null",
+      ".indexOn": ["lastMessageTime"],
+      "$chatId": {
+        ".write": "auth != null"
+      }
+    }
+  }
+}

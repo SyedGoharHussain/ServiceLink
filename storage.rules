@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidSize() {
+      return request.resource.size < 5 * 1024 * 1024; // 5MB
+    }
+    
+    // Profile images: users can only upload/update/delete their own
+    match /profile_images/{userId}/{allPaths=**} {
+      allow read: if true; // Anyone can view profile images
+      allow write: if isAuthenticated() 
+                   && isOwner(userId)
+                   && isImage()
+                   && isValidSize();
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Chat images: only participants can upload
+    match /chat_images/{chatId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated()
+                   && isImage()
+                   && isValidSize();
+    }
+    
+    // Deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
