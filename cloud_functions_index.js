@@ -3,10 +3,6 @@ const admin = require('firebase-admin');
 
 admin.initializeApp();
 
-/**
- * Cloud Function to send FCM push notifications
- * Triggers when a new document is created in fcm_messages collection
- */
 exports.sendFCMNotification = functions.firestore
   .document('fcm_messages/{messageId}')
   .onCreate(async (snap, context) => {
@@ -73,10 +69,6 @@ exports.sendFCMNotification = functions.firestore
     }
   });
 
-/**
- * Clean up old fcm_messages (older than 7 days)
- * Runs daily at midnight
- */
 exports.cleanupOldMessages = functions.pubsub
   .schedule('0 0 * * *')
   .timeZone('UTC')
