@@ -70,6 +70,7 @@ class ChatProvider with ChangeNotifier {
   Future<bool> sendMessage({
     required String chatId,
     required String senderId,
+    required String senderName,
     required String text,
   }) async {
     try {
@@ -78,6 +79,7 @@ class ChatProvider with ChangeNotifier {
       await _chatService.sendMessage(
         chatId: chatId,
         senderId: senderId,
+        senderName: senderName,
         text: text.trim(),
       );
 

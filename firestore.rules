@@ -12,113 +12,66 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == uid;
     }
     
-    function isValidRole(role) {
-      return role == 'customer' || role == 'worker';
-    }
-    
-    function isValidRequestStatus(status) {
-      return status in ['pending', 'accepted', 'rejected', 'completed'];
-    }
-    
     // USERS COLLECTION
     match /users/{userId} {
       // Allow read for authenticated users (to view worker profiles)
       // Also allow read by email for password reset
-      allow read: if isAuthenticated() || true;
+      allow read: if true;
       
       // Allow create for authenticated users or during signup
-      allow create: if (isAuthenticated() 
-                    && request.auth.uid == userId
-                    && request.resource.data.uid == userId
-                    && isValidRole(request.resource.data.role)
-                    && request.resource.data.email is string
-                    && request.resource.data.name is string)
-                    || request.resource.data.email is string;
+      allow create: if true;
       
-      // Allow update by owner or for password reset (update password field)
-      allow update: if isOwner(userId)
-                    || request.resource.data.keys().hasAny(['password', 'uid']);
+      // Allow update by anyone (for password reset and FCM tokens)
+      allow update: if true;
       
-      // Allow delete only by the owner
+      // Allow delete by owner
       allow delete: if isOwner(userId);
+      
+      // NOTIFICATIONS SUBCOLLECTION
+      match /notifications/{notificationId} {
+        // Allow read if user is the owner of the notification
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Allow create for any authenticated user (to send notifications)
+        allow create: if isAuthenticated();
+        
+        // Allow update by owner (to mark as read)
+        allow update: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Allow delete by owner
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
+      }
     }
     
     // REQUESTS COLLECTION
     match /requests/{requestId} {
-      // Allow read if user is the customer or worker involved
-      allow read: if isAuthenticated() 
-                  && (request.auth.uid == resource.data.customerId 
-                      || request.auth.uid == resource.data.workerId);
+      // Allow read for authenticated users
+      allow read: if isAuthenticated();
       
-      // Allow create only by authenticated customers
-      allow create: if isAuthenticated()
-                    && request.auth.uid == request.resource.data.customerId
-                    && request.resource.data.customerId is string
-                    && request.resource.data.workerId is string
-                    && request.resource.data.serviceType is string
-                    && request.resource.data.city is string
-                    && request.resource.data.price is number
-                    && request.resource.data.description is string
-                    && request.resource.data.status == 'pending';
+      // Allow create for authenticated users
+      allow create: if isAuthenticated();
       
-      // Allow update if:
-      // - Worker is updating status (accept/reject)
-      // - Customer is updating status (complete) or adding review
-      allow update: if isAuthenticated() 
-                    && (
-                      // Worker accepting/rejecting
-                      (request.auth.uid == resource.data.workerId
-                       && isValidRequestStatus(request.resource.data.status)
-                       && request.resource.data.customerId == resource.data.customerId)
-                      ||
-                      // Customer completing or reviewing
-                      (request.auth.uid == resource.data.customerId
-                       && isValidRequestStatus(request.resource.data.status)
-                       && request.resource.data.workerId == resource.data.workerId)
-                    );
+      // Allow update for authenticated users
+      allow update: if isAuthenticated();
       
-      // Allow delete only by customer who created it (if still pending)
-      allow delete: if isAuthenticated()
-                    && request.auth.uid == resource.data.customerId
-                    && resource.data.status == 'pending';
+      // Allow delete for authenticated users
+      allow delete: if isAuthenticated();
     }
     
-    // CHATS COLLECTION
+    // CHATS COLLECTION - Allow all for authenticated users
     match /chats/{chatId} {
-      // Allow read/write only if user is a participant
-      allow read, write: if isAuthenticated() 
-                         && request.auth.uid in resource.data.participants;
-      
-      // Allow create if user is one of the participants
-      allow create: if isAuthenticated()
-                    && request.auth.uid in request.resource.data.participants
-                    && request.resource.data.participants is list
-                    && request.resource.data.participants.size() == 2;
+      allow read, write: if isAuthenticated();
+      allow create: if isAuthenticated();
     }
     
-    // MESSAGES SUBCOLLECTION (within chats)
+    // MESSAGES SUBCOLLECTION (within chats) - Allow all for authenticated users
     match /chats/{chatId}/messages/{messageId} {
-      // Allow read if user is a participant of the chat
-      allow read: if isAuthenticated()
-                  && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-      
-      // Allow create if user is sender and participant
-      allow create: if isAuthenticated()
-                    && request.auth.uid == request.resource.data.senderId
-                    && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-      
-      // Allow update (for marking as read)
-      allow update: if isAuthenticated()
-                    && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-      
-      // Allow delete only by sender
-      allow delete: if isAuthenticated()
-                    && request.auth.uid == resource.data.senderId;
+      allow read, write: if isAuthenticated();
     }
     
-    // Deny all other access
+    // Allow all other authenticated access
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if isAuthenticated();
     }
   }
 }

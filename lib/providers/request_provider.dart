@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import '../services/firestore_service.dart';
+import '../services/notification_service.dart';
 import '../models/request_model.dart';
 
 /// Provider for managing job requests
 class RequestProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
+  final NotificationService _notificationService = NotificationService();
 
   List<RequestModel> _requests = [];
   bool _isLoading = false;
@@ -56,6 +58,14 @@ class RequestProvider with ChangeNotifier {
       final requestId = await _firestoreService.createRequest(request);
       print('Request created successfully with ID: $requestId');
 
+      // Send notification to worker
+      await _notificationService.sendRequestPendingNotification(
+        workerId: workerId,
+        customerName: customerName,
+        serviceType: serviceType,
+        requestId: requestId,
+      );
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -96,6 +106,17 @@ class RequestProvider with ChangeNotifier {
         acceptedAt: DateTime.now(),
       );
 
+      // Find the request to get customer details
+      final request = _requests.firstWhere((r) => r.requestId == requestId);
+
+      // Send notification to customer
+      await _notificationService.sendRequestAcceptedNotification(
+        customerId: request.customerId,
+        workerName: request.workerName,
+        serviceType: request.serviceType,
+        requestId: requestId,
+      );
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -116,6 +137,17 @@ class RequestProvider with ChangeNotifier {
       await _firestoreService.updateRequestStatus(
         requestId: requestId,
         status: 'rejected',
+      );
+
+      // Find the request to get customer details
+      final request = _requests.firstWhere((r) => r.requestId == requestId);
+
+      // Send notification to customer
+      await _notificationService.sendRequestRejectedNotification(
+        customerId: request.customerId,
+        workerName: request.workerName,
+        serviceType: request.serviceType,
+        requestId: requestId,
       );
 
       _isLoading = false;
@@ -139,6 +171,18 @@ class RequestProvider with ChangeNotifier {
         requestId: requestId,
         status: 'completed',
         completedAt: DateTime.now(),
+      );
+
+      // Find the request to get customer details
+      final request = _requests.firstWhere((r) => r.requestId == requestId);
+
+      // Send notification to customer
+      await _notificationService.sendRequestCompletedNotification(
+        userId: request.customerId,
+        otherUserName: request.workerName,
+        serviceType: request.serviceType,
+        requestId: requestId,
+        isWorker: false, // Customer is receiving the notification
       );
 
       _isLoading = false;

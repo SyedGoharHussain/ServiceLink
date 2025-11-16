@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
@@ -14,11 +16,61 @@ import 'screens/auth/email_verification_screen.dart';
 import 'utils/theme.dart';
 import 'utils/constants.dart';
 
+/// Background message handler - must be top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print('Handling background message: ${message.messageId}');
+  print('Title: ${message.notification?.title}');
+  print('Body: ${message.notification?.body}');
+  print('Data: ${message.data}');
+
+  // Show local notification even when app is closed
+  final localNotifications = FlutterLocalNotificationsPlugin();
+
+  const androidDetails = AndroidNotificationDetails(
+    'high_importance_channel',
+    'High Importance Notifications',
+    channelDescription: 'This channel is used for important notifications',
+    importance: Importance.high,
+    priority: Priority.high,
+    enableVibration: true,
+    playSound: true,
+    icon: '@mipmap/ic_launcher',
+    visibility: NotificationVisibility.public,
+    showWhen: true,
+  );
+
+  const iosDetails = DarwinNotificationDetails(
+    presentAlert: true,
+    presentBadge: true,
+    presentSound: true,
+  );
+
+  const notificationDetails = NotificationDetails(
+    android: androidDetails,
+    iOS: iosDetails,
+  );
+
+  if (message.notification != null) {
+    await localNotifications.show(
+      message.hashCode,
+      message.notification!.title ?? 'New Notification',
+      message.notification!.body ?? '',
+      notificationDetails,
+      payload: message.data.toString(),
+    );
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Set up background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(const MyApp());
 }

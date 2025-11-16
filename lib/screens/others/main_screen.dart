@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/messaging_service.dart';
+import '../../services/notification_service.dart';
 import '../../utils/constants.dart';
 import '../customer/customer_home_screen.dart';
 import '../worker/worker_home_screen.dart';
 import '../customer/requests_screen.dart';
 import '../chat/chat_list_screen.dart';
 import 'profile_screen.dart';
+import 'notifications_screen.dart';
 import '../worker/earnings_screen.dart';
 import '../worker/completed_tasks_screen.dart';
 import '../worker/worker_reviews_screen.dart';
@@ -21,6 +24,89 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  bool _permissionRequested = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize messaging service
+    _initializeMessaging();
+    // Request notification permission after a short delay
+    Future.delayed(const Duration(seconds: 1), _requestNotificationPermission);
+  }
+
+  Future<void> _initializeMessaging() async {
+    final messagingService = MessagingService();
+    await messagingService.initialize();
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    if (_permissionRequested) return;
+    _permissionRequested = true;
+
+    final messagingService = MessagingService();
+
+    // Check if permission is already granted
+    final isGranted = await messagingService.isNotificationPermissionGranted();
+    if (isGranted) return;
+
+    // Show explanation dialog
+    if (!mounted) return;
+
+    final shouldRequest = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Enable Notifications'),
+        content: const Text(
+          'Stay updated with real-time notifications about:\n\n'
+          '• New chat messages\n'
+          '• Pending service requests\n'
+          '• Request updates (accepted/rejected)\n'
+          '• Completed tasks\n\n'
+          'Enable notifications to get instant updates!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Not Now'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Enable'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldRequest == true && mounted) {
+      final granted = await messagingService.requestNotificationPermission();
+
+      if (granted && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Notifications enabled successfully!'),
+            backgroundColor: AppConstants.successColor,
+          ),
+        );
+
+        // Update FCM token
+        final authProvider = context.read<AuthProvider>();
+        if (authProvider.userModel != null) {
+          await messagingService.updateUserToken(authProvider.userModel!.uid);
+        }
+      }
+    }
+  }
+
+  Stream<int> _getUnreadCountStream(AuthProvider authProvider) {
+    if (authProvider.userModel == null) {
+      return Stream.value(0);
+    }
+    return NotificationService()
+        .getUserNotifications(authProvider.userModel!.uid)
+        .map((notifications) => notifications.where((n) => !n.isRead).length);
+  }
 
   String _getAppBarTitle(int index, String? role) {
     switch (index) {
@@ -148,6 +234,74 @@ class _MainScreenState extends State<MainScreen> {
                   },
                 ),
               ],
+              StreamBuilder<int>(
+                stream: _getUnreadCountStream(authProvider),
+                builder: (context, snapshot) {
+                  final unreadCount = snapshot.data ?? 0;
+                  return ListTile(
+                    leading: Stack(
+                      children: [
+                        const Icon(Icons.notifications),
+                        if (unreadCount > 0)
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                unreadCount > 9 ? '9+' : '$unreadCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    title: const Text('Notifications'),
+                    trailing: unreadCount > 0
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              unreadCount > 9 ? '9+' : '$unreadCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : null,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotificationsScreen(),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.task_alt),
                 title: const Text('Completed Tasks'),

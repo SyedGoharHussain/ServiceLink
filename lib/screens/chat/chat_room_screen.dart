@@ -65,6 +65,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final success = await context.read<ChatProvider>().sendMessage(
       chatId: widget.chatId,
       senderId: authProvider.userModel!.uid,
+      senderName: authProvider.userModel!.name,
       text: _messageController.text.trim(),
     );
 

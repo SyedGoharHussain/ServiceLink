@@ -42,32 +42,31 @@ class _CompletedTasksScreenState extends State<CompletedTasksScreen> {
         .where((request) => request.status == AppConstants.statusCompleted)
         .toList();
 
-    return completedRequests.isEmpty
-        ? Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.task_alt, size: 80, color: Colors.grey.shade400),
-                const SizedBox(height: 16),
-                Text(
-                  'No completed tasks yet',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
+    return Scaffold(
+      appBar: AppBar(title: const Text('Completed Tasks'), elevation: 1),
+      body: completedRequests.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.task_alt, size: 64, color: Colors.grey.shade400),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No completed tasks yet',
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                   ),
-                ),
-              ],
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(AppConstants.paddingMedium),
+              itemCount: completedRequests.length,
+              itemBuilder: (context, index) {
+                final request = completedRequests[index];
+                return _CompletedTaskCard(request: request, isWorker: isWorker);
+              },
             ),
-          )
-        : ListView.builder(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
-            itemCount: completedRequests.length,
-            itemBuilder: (context, index) {
-              final request = completedRequests[index];
-              return _CompletedTaskCard(request: request, isWorker: isWorker);
-            },
-          );
+    );
   }
 }
 
@@ -90,6 +89,7 @@ class _CompletedTaskCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -111,6 +111,7 @@ class _CompletedTaskCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: const [
                       Icon(
                         Icons.check_circle,
@@ -131,14 +132,22 @@ class _CompletedTaskCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+
+            const SizedBox(height: AppConstants.paddingSmall),
+
+            // User name
             Text(
               isWorker
                   ? 'Customer: ${request.customerName}'
                   : 'Worker: ${request.workerName}',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppConstants.textSecondaryColor,
+              ),
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 4),
+
+            // Location and date
             Row(
               children: [
                 const Icon(
@@ -159,57 +168,62 @@ class _CompletedTaskCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  request.completedAt != null
-                      ? DateFormat('MMM dd, yyyy').format(request.completedAt!)
-                      : 'N/A',
+                  DateFormat(
+                    'MMM dd, yyyy',
+                  ).format(request.completedAt ?? request.createdAt),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+
+            const SizedBox(height: AppConstants.paddingSmall),
+
+            // Description
             Text(
               request.description,
               style: Theme.of(context).textTheme.bodyMedium,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (isWorker)
-                  Text(
-                    'Earned: \$${request.price.toStringAsFixed(0)}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppConstants.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                else
-                  Text(
-                    'Price: \$${request.price.toStringAsFixed(0)}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppConstants.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                if (request.customerRating != null)
-                  Row(
-                    children: [
-                      const Icon(Icons.star, size: 16, color: Colors.amber),
-                      const SizedBox(width: 4),
-                      Text(
-                        request.customerRating!.toStringAsFixed(1),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+
+            const SizedBox(height: AppConstants.paddingSmall),
+
+            // Price
+            Text(
+              'Earned: \$${request.price.toStringAsFixed(0)}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppConstants.primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
             ),
+
+            // Rating section
+            if (request.customerRating != null) ...[
+              const SizedBox(height: AppConstants.paddingSmall),
+              Row(
+                children: [
+                  const Icon(Icons.star, size: 16, color: Colors.amber),
+                  const SizedBox(width: 4),
+                  Text(
+                    request.customerRating!.toStringAsFixed(1),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      request.customerReview ?? '',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
+            // Add review button for customers
             if (!isWorker && request.customerRating == null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppConstants.paddingSmall),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -231,7 +245,8 @@ class _CompletedTaskCard extends StatelessWidget {
                             backgroundColor: AppConstants.successColor,
                           ),
                         );
-                        // Reload tasks to show updated review
+
+                        // Reload tasks
                         final authProvider = context.read<AuthProvider>();
                         if (authProvider.userModel != null) {
                           context.read<RequestProvider>().loadRequests(
@@ -239,7 +254,8 @@ class _CompletedTaskCard extends StatelessWidget {
                             authProvider.userModel!.role,
                           );
                         }
-                        // Refresh worker profile data after a short delay to ensure Firestore write completes
+
+                        // Refresh worker profile
                         try {
                           await Future.delayed(
                             const Duration(milliseconds: 500),
@@ -247,7 +263,6 @@ class _CompletedTaskCard extends StatelessWidget {
                           await context.read<WorkerProvider>().refreshWorker(
                             request.workerId,
                           );
-                          // If worker is viewing their own profile, refresh AuthProvider too
                           if (authProvider.userModel?.uid == request.workerId) {
                             await authProvider.refreshUserProfile();
                           }
@@ -266,40 +281,12 @@ class _CompletedTaskCard extends StatelessWidget {
                       }
                     }
                   },
-                  icon: const Icon(Icons.star, size: 18),
+                  icon: const Icon(Icons.star, size: 16),
                   label: const Text('Add Review'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber,
                     foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                ),
-              ),
-            ],
-            if (request.customerReview != null &&
-                request.customerReview!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Review:',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      request.customerReview!,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
                 ),
               ),
             ],

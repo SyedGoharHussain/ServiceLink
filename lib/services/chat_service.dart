@@ -1,10 +1,12 @@
 import 'package:firebase_database/firebase_database.dart';
 import '../models/chat_model.dart';
 import '../models/message_model.dart';
+import 'notification_service.dart';
 
 /// Chat service for handling real-time chat with Firebase Realtime Database
 class ChatService {
   final FirebaseDatabase _database = FirebaseDatabase.instance;
+  final NotificationService _notificationService = NotificationService();
 
   /// Get chat ID between two users (deterministic)
   String getChatId(String userId1, String userId2) {
@@ -71,6 +73,7 @@ class ChatService {
   Future<void> sendMessage({
     required String chatId,
     required String senderId,
+    required String senderName,
     required String text,
   }) async {
     try {
@@ -89,6 +92,18 @@ class ChatService {
         'lastMessage': text,
         'lastMessageTime': message.timestamp.millisecondsSinceEpoch,
       });
+
+      // Send notification to recipient
+      // Extract the recipient ID from chatId (it's the other participant)
+      final participants = chatId.split('_');
+      final recipientId = participants.firstWhere((id) => id != senderId);
+
+      await _notificationService.sendChatNotification(
+        recipientId: recipientId,
+        senderName: senderName,
+        message: text,
+        chatId: chatId,
+      );
     } catch (e) {
       throw Exception('Failed to send message: $e');
     }
