@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import '../../utils/constants.dart';
+import '../../services/auth_service.dart';
 import 'signin_screen.dart';
 
 /// Email verification screen for OTP verification
@@ -17,6 +18,7 @@ class EmailVerificationScreen extends StatefulWidget {
 }
 
 class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
+  final AuthService _authService = AuthService();
   bool _isEmailVerified = false;
   bool _canResendEmail = false;
   Timer? _timer;
@@ -77,23 +79,34 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
   Future<void> _sendVerificationEmail() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      await user?.sendEmailVerification();
+      await _authService.sendEmailVerification();
+
+      print('✅ Verification email sent to ${widget.email}');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Verification email sent!'),
+          SnackBar(
+            content: Text(
+              'Verification email sent to ${widget.email}!\n\nPlease check your inbox and spam folder.\nThe email will be sent via Firebase SMTP.',
+            ),
             backgroundColor: AppConstants.successColor,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
     } catch (e) {
+      print('❌ Email verification error: $e');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error sending email: ${e.toString()}'),
+            content: Text(
+              e.toString().contains('already verified')
+                  ? 'Email is already verified'
+                  : 'Error sending verification email: ${e.toString()}',
+            ),
             backgroundColor: AppConstants.errorColor,
+            duration: const Duration(seconds: 5),
           ),
         );
       }

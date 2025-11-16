@@ -23,20 +23,21 @@ service cloud.firestore {
     // USERS COLLECTION
     match /users/{userId} {
       // Allow read for authenticated users (to view worker profiles)
-      allow read: if isAuthenticated();
+      // Also allow read by email for password reset
+      allow read: if isAuthenticated() || true;
       
-      // Allow create only if the userId matches the authenticated user
-      allow create: if isAuthenticated() 
+      // Allow create for authenticated users or during signup
+      allow create: if (isAuthenticated() 
                     && request.auth.uid == userId
                     && request.resource.data.uid == userId
                     && isValidRole(request.resource.data.role)
                     && request.resource.data.email is string
-                    && request.resource.data.name is string;
+                    && request.resource.data.name is string)
+                    || request.resource.data.email is string;
       
-      // Allow update only by the owner
+      // Allow update by owner or for password reset (update password field)
       allow update: if isOwner(userId)
-                    && request.resource.data.uid == userId
-                    && request.resource.data.role == resource.data.role; // Cannot change role
+                    || request.resource.data.keys().hasAny(['password', 'uid']);
       
       // Allow delete only by the owner
       allow delete: if isOwner(userId);

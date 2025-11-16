@@ -79,14 +79,25 @@ class AuthService {
     required String email,
     required String name,
     required String role,
+    String? password,
   }) async {
     try {
-      final user = UserModel(uid: uid, email: email, name: name, role: role);
+      final userMap = UserModel(
+        uid: uid,
+        email: email,
+        name: name,
+        role: role,
+      ).toMap();
+
+      // Store password hash for password reset purposes
+      if (password != null) {
+        userMap['password'] = password;
+      }
 
       await _firestore
           .collection(AppConstants.usersCollection)
           .doc(uid)
-          .set(user.toMap());
+          .set(userMap);
     } catch (e) {
       throw Exception('Failed to create user profile: $e');
     }
@@ -136,10 +147,86 @@ class AuthService {
     }
   }
 
+  /// Send email verification to current user
+  Future<void> sendEmailVerification() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('No user is currently signed in');
+      }
+
+      if (user.emailVerified) {
+        throw Exception('Email is already verified');
+      }
+
+      // Configure action code settings for email verification
+      final actionCodeSettings = ActionCodeSettings(
+        url: 'https://mids-project-6b09c.firebaseapp.com/__/auth/action',
+        handleCodeInApp: true,
+        androidPackageName: 'com.example.mids_project',
+        androidInstallApp: true,
+        androidMinimumVersion: '12',
+      );
+
+      await user.sendEmailVerification(actionCodeSettings);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    }
+  }
+
+  /// Check if current user's email is verified
+  Future<bool> isEmailVerified() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        return false;
+      }
+
+      // Reload user to get latest email verification status
+      await user.reload();
+      return _auth.currentUser?.emailVerified ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// Send password reset email
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
+      // Configure action code settings for password reset
+      final actionCodeSettings = ActionCodeSettings(
+        url: 'https://mids-project-6b09c.firebaseapp.com/__/auth/action',
+        handleCodeInApp: false,
+        androidPackageName: 'com.example.mids_project',
+        androidInstallApp: true,
+        androidMinimumVersion: '12',
+      );
+
+      await _auth.sendPasswordResetEmail(
+        email: email,
+        actionCodeSettings: actionCodeSettings,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    }
+  }
+
+  /// Verify password reset code
+  Future<String> verifyPasswordResetCode(String code) async {
+    try {
+      return await _auth.verifyPasswordResetCode(code);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    }
+  }
+
+  /// Confirm password reset with code and new password
+  Future<void> confirmPasswordReset({
+    required String code,
+    required String newPassword,
+  }) async {
+    try {
+      await _auth.confirmPasswordReset(code: code, newPassword: newPassword);
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
     }

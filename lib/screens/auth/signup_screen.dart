@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/constants.dart';
-import '../../services/email_service.dart';
-import 'otp_verification_screen.dart';
+import 'role_selection_screen.dart';
 
 /// Sign-up screen for new users
 class SignUpScreen extends StatefulWidget {
@@ -39,74 +38,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     try {
-      // Generate and send OTP
-      final emailService = EmailService();
-      final otp = EmailService.generateOTP();
-
-      // Try to send OTP email
-      final result = await emailService.sendOTP(
-        _emailController.text.trim(),
-        otp,
-      );
-
       setState(() {
         _isLoading = false;
       });
 
       if (!mounted) return;
 
-      if (result['success'] == true) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('OTP sent to ${_emailController.text.trim()}'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
+      // Navigate directly to role selection
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RoleSelectionScreen(
+            email: _emailController.text.trim(),
+            name: _nameController.text.trim(),
+            password: _passwordController.text,
           ),
-        );
-
-        // Navigate to OTP verification
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OTPVerificationScreen(
-              email: _emailController.text.trim(),
-              name: _nameController.text.trim(),
-              password: _passwordController.text,
-              sentOTP: otp,
-            ),
-          ),
-        );
-      } else {
-        // Show error with option to proceed anyway (for testing)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Email Error: ${result['message']}\n\nCheck console for OTP: $otp',
-            ),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 10),
-            action: SnackBarAction(
-              label: 'Proceed Anyway',
-              textColor: Colors.white,
-              onPressed: () {
-                // Navigate to OTP screen even if email failed (for testing)
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OTPVerificationScreen(
-                      email: _emailController.text.trim(),
-                      name: _nameController.text.trim(),
-                      password: _passwordController.text,
-                      sentOTP: otp,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        );
-      }
+        ),
+      );
     } catch (e) {
       setState(() {
         _isLoading = false;

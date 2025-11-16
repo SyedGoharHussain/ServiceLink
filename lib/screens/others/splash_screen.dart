@@ -17,7 +17,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(seconds: 6),
+      duration: const Duration(seconds: 4),
       vsync: this,
     )..repeat();
   }
@@ -124,7 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
           angle:
               -(_controller.value *
                   2 *
-                  math.pi), // Counter-rotate to keep upright
+                  math.pi),
           child: Container(
             width: 50,
             height: 50,

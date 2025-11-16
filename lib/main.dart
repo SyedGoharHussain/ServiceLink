@@ -14,8 +14,12 @@ import 'screens/auth/email_verification_screen.dart';
 import 'utils/theme.dart';
 import 'utils/constants.dart';
 
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-void main() {
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const MyApp());
 }
 
@@ -24,11 +28,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: AppConstants.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const AppInitializer(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()..initialize()),
+        ChangeNotifierProvider(create: (_) => RequestProvider()),
+        ChangeNotifierProvider(create: (_) => WorkerProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+      ],
+      child: MaterialApp(
+        title: AppConstants.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: const AppInitializer(),
+      ),
     );
   }
 }
@@ -53,13 +65,6 @@ class _AppInitializerState extends State<AppInitializer> {
 
   Future<void> _initializeApp() async {
     try {
-      WidgetsFlutterBinding.ensureInitialized();
-
-      // Initialize Firebase
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-
       // Initialize FCM
       final messagingService = MessagingService();
       await messagingService.initialize();
@@ -109,21 +114,8 @@ class _AppInitializerState extends State<AppInitializer> {
       );
     }
 
-    // Show main app with providers
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()..initialize()),
-        ChangeNotifierProvider(create: (_) => RequestProvider()),
-        ChangeNotifierProvider(create: (_) => WorkerProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
-      ],
-      child: MaterialApp(
-        title: AppConstants.appName,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const AuthWrapper(),
-      ),
-    );
+    // Show auth wrapper
+    return const AuthWrapper();
   }
 }
 

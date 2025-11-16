@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/constants.dart';
-import '../../services/email_service.dart';
-import 'otp_verification_screen.dart';
+import '../../services/auth_service.dart';
+import 'signin_screen.dart';
 
 /// Forgot password screen to reset password via email
 class ForgotPasswordScreen extends StatefulWidget {
@@ -15,6 +14,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final AuthService _authService = AuthService();
   bool _isLoading = false;
 
   @override
@@ -31,99 +31,68 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     });
 
     try {
-      // Generate and send OTP
-      final emailService = EmailService();
-      final otp = EmailService.generateOTP();
+      // Send Firebase password reset email using AuthService
+      await _authService.sendPasswordResetEmail(_emailController.text.trim());
 
-      final result = await emailService.sendPasswordResetOTP(
-        _emailController.text.trim(),
-        otp,
-      );
+      if (!mounted) return;
 
       setState(() {
         _isLoading = false;
       });
 
-      if (!mounted) return;
-
-      if (result['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('OTP sent to ${_emailController.text.trim()}'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
+      // Show success dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          icon: Icon(
+            Icons.mark_email_read,
+            size: 60,
+            color: AppConstants.primaryColor,
           ),
-        );
-
-        // Navigate to OTP verification for password reset
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OTPVerificationScreen(
-              email: _emailController.text.trim(),
-              name: '',
-              password: '',
-              sentOTP: otp,
-              isPasswordReset: true,
-            ),
+          title: const Text('Check Your Email'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'A password reset link has been sent via Firebase SMTP to:',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _emailController.text.trim(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Please check your email and spam folder, then click the link to reset your password.\n\nThe link will expire in 1 hour.',
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send OTP: ${result['message']}'),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 8),
-            action: SnackBarAction(
-              label: 'Proceed',
-              textColor: Colors.white,
+          actions: [
+            TextButton(
               onPressed: () {
-                Navigator.push(
+                Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => OTPVerificationScreen(
-                      email: _emailController.text.trim(),
-                      name: '',
-                      password: '',
-                      sentOTP: otp,
-                      isPasswordReset: true,
-                    ),
-                  ),
+                  MaterialPageRoute(builder: (context) => const SignInScreen()),
+                  (route) => false,
                 );
               },
+              child: const Text('Go to Sign In'),
             ),
-          ),
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      String message = 'Failed to verify email';
-
-      switch (e.code) {
-        case 'invalid-email':
-          message = 'Invalid email address';
-          break;
-        case 'too-many-requests':
-          message = 'Too many requests. Please try again later';
-          break;
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: AppConstants.errorColor,
-          ),
-        );
-        setState(() {
-          _isLoading = false;
-        });
-      }
+          ],
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: AppConstants.errorColor,
+            duration: const Duration(seconds: 4),
           ),
         );
         setState(() {
@@ -173,7 +142,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                 // Description
                 Text(
-                  'Enter your email address and we\'ll send you a link to reset your password.',
+                  'Enter your email address to receive a password reset link.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppConstants.textSecondaryColor,
                   ),
@@ -221,7 +190,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             ),
                           )
                         : const Text(
-                            'Send Reset Link',
+                            'Reset Password',
                             style: TextStyle(fontSize: 16),
                           ),
                   ),

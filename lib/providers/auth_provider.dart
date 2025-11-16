@@ -111,7 +111,17 @@ class AuthProvider with ChangeNotifier {
         email: email,
         name: name,
         role: role,
+        password: password,
       );
+
+      // Send verification email immediately using AuthService
+      try {
+        await _authService.sendEmailVerification();
+        print('✅ Verification email sent to $email via Firebase SMTP');
+      } catch (emailError) {
+        print('⚠️ Failed to send verification email: $emailError');
+        // Don't fail the signup if email sending fails
+      }
 
       _isLoading = false;
       notifyListeners();
