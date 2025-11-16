@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
+import '../../providers/auth_provider.dart';
+import 'main_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final bool navigateToDashboard;
+
+  const SplashScreen({super.key, this.navigateToDashboard = false});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -20,6 +25,20 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 4),
       vsync: this,
     )..repeat();
+
+    // If navigateToDashboard is true, navigate after 5 seconds
+    if (widget.navigateToDashboard) {
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted) {
+          final authProvider = context.read<AuthProvider>();
+          if (authProvider.isAuthenticated && authProvider.userModel != null) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+            );
+          }
+        }
+      });
+    }
   }
 
   @override
@@ -86,14 +105,25 @@ class _SplashScreenState extends State<SplashScreen>
             ),
 
             const SizedBox(height: 40),
-            const Text(
-              'Loading...',
-              style: TextStyle(
+            Text(
+              widget.navigateToDashboard ? 'Welcome back!' : 'Loading...',
+              style: const TextStyle(
                 fontSize: 18,
-                color: Colors.white70,
-                fontWeight: FontWeight.w300,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
               ),
             ),
+            if (widget.navigateToDashboard) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Loading your dashboard...',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -121,10 +151,7 @@ class _SplashScreenState extends State<SplashScreen>
       return Transform.translate(
         offset: Offset(x, y),
         child: Transform.rotate(
-          angle:
-              -(_controller.value *
-                  2 *
-                  math.pi),
+          angle: -(_controller.value * 2 * math.pi),
           child: Container(
             width: 50,
             height: 50,

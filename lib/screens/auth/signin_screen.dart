@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/constants.dart';
+import '../others/splash_screen.dart';
 import 'signup_screen.dart';
 import 'role_selection_screen.dart';
 import 'forgot_password_screen.dart';
@@ -38,7 +39,14 @@ class _SignInScreenState extends State<SignInScreen> {
 
     if (!mounted) return;
 
-    if (!success) {
+    if (success) {
+      // Navigate to splash screen with dashboard navigation
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const SplashScreen(navigateToDashboard: true),
+        ),
+      );
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authProvider.errorMessage ?? 'Sign in failed'),
@@ -62,8 +70,12 @@ class _SignInScreenState extends State<SignInScreen> {
           MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
         );
       } else if (hasProfile) {
-        // Wait a bit for userModel to load
-        await Future.delayed(const Duration(milliseconds: 500));
+        // Navigate to splash screen with dashboard navigation for existing users
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const SplashScreen(navigateToDashboard: true),
+          ),
+        );
       } else if (authProvider.errorMessage != null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
