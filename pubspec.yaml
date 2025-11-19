@@ -54,6 +54,7 @@ dependencies:
   
   # Image handling
   image_picker: ^1.1.2
+  image: ^4.3.0  # For image compression and base64 conversion
   
   # UI helpers
   cached_network_image: ^3.4.1

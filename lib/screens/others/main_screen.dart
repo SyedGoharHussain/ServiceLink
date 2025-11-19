@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/chat_provider.dart';
+import '../../providers/request_provider.dart';
 import '../../services/messaging_service.dart';
-import '../../services/notification_service.dart';
 import '../../utils/constants.dart';
 import '../customer/customer_home_screen.dart';
 import '../worker/worker_home_screen.dart';
 import '../customer/requests_screen.dart';
 import '../chat/chat_list_screen.dart';
 import 'profile_screen.dart';
-import 'notifications_screen.dart';
 import '../worker/earnings_screen.dart';
 import '../worker/completed_tasks_screen.dart';
 import '../worker/worker_reviews_screen.dart';
@@ -31,6 +31,8 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     // Initialize messaging service
     _initializeMessaging();
+    // Load data for badge counts
+    _loadUserData();
     // Request notification permission after a short delay
     Future.delayed(const Duration(seconds: 1), _requestNotificationPermission);
   }
@@ -38,6 +40,26 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _initializeMessaging() async {
     final messagingService = MessagingService();
     await messagingService.initialize();
+  }
+
+  void _loadUserData() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = context.read<AuthProvider>();
+      if (authProvider.userModel != null) {
+        final userId = authProvider.userModel!.uid;
+        final userRole = authProvider.userModel!.role;
+
+        // Load chats for badge count
+        context.read<ChatProvider>().loadUserChats(userId);
+
+        // Load requests based on role
+        if (userRole == AppConstants.roleWorker) {
+          context.read<RequestProvider>().loadWorkerRequests(userId);
+        } else {
+          context.read<RequestProvider>().loadCustomerRequests(userId);
+        }
+      }
+    });
   }
 
   Future<void> _requestNotificationPermission() async {
@@ -99,15 +121,6 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  Stream<int> _getUnreadCountStream(AuthProvider authProvider) {
-    if (authProvider.userModel == null) {
-      return Stream.value(0);
-    }
-    return NotificationService()
-        .getUserNotifications(authProvider.userModel!.uid)
-        .map((notifications) => notifications.where((n) => !n.isRead).length);
-  }
-
   String _getAppBarTitle(int index, String? role) {
     switch (index) {
       case 0:
@@ -123,6 +136,83 @@ class _MainScreenState extends State<MainScreen> {
       default:
         return 'ServiceLink';
     }
+  }
+
+  Widget _buildBottomNavigationBar(AuthProvider authProvider) {
+    final chatProvider = context.watch<ChatProvider>();
+    final requestProvider = context.watch<RequestProvider>();
+
+    // Get unread counts
+    final unreadChatCount = authProvider.userModel != null
+        ? chatProvider.getTotalUnreadCount(authProvider.userModel!.uid)
+        : 0;
+
+    // Get pending requests count (for workers) or updated requests (for customers)
+    final pendingRequestsCount = requestProvider
+        .getRequestsByStatus('pending')
+        .length;
+
+    return BottomNavigationBar(
+      currentIndex: _currentIndex,
+      onTap: (index) {
+        setState(() {
+          _currentIndex = index;
+        });
+      },
+      items: [
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        BottomNavigationBarItem(
+          icon: _buildIconWithBadge(Icons.work_outline, pendingRequestsCount),
+          activeIcon: _buildIconWithBadge(Icons.work, pendingRequestsCount),
+          label: 'Requests',
+        ),
+        BottomNavigationBarItem(
+          icon: _buildIconWithBadge(Icons.chat_bubble_outline, unreadChatCount),
+          activeIcon: _buildIconWithBadge(Icons.chat_bubble, unreadChatCount),
+          label: 'Chat',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          activeIcon: Icon(Icons.person),
+          label: 'Profile',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIconWithBadge(IconData icon, int count) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon),
+        if (count > 0)
+          Positioned(
+            right: -6,
+            top: -6,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                count > 9 ? '9+' : '$count',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   DateTime? _lastBackPressed;
@@ -234,74 +324,6 @@ class _MainScreenState extends State<MainScreen> {
                   },
                 ),
               ],
-              StreamBuilder<int>(
-                stream: _getUnreadCountStream(authProvider),
-                builder: (context, snapshot) {
-                  final unreadCount = snapshot.data ?? 0;
-                  return ListTile(
-                    leading: Stack(
-                      children: [
-                        const Icon(Icons.notifications),
-                        if (unreadCount > 0)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 16,
-                                minHeight: 16,
-                              ),
-                              child: Text(
-                                unreadCount > 9 ? '9+' : '$unreadCount',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    title: const Text('Notifications'),
-                    trailing: unreadCount > 0
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              unreadCount > 9 ? '9+' : '$unreadCount',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        : null,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NotificationsScreen(),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
               ListTile(
                 leading: const Icon(Icons.task_alt),
                 title: const Text('Completed Tasks'),
@@ -376,36 +398,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ),
         body: screens[_currentIndex],
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.work_outline),
-              activeIcon: Icon(Icons.work),
-              label: 'Requests',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_outline),
-              activeIcon: Icon(Icons.chat_bubble),
-              label: 'Chat',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
-        ),
+        bottomNavigationBar: _buildBottomNavigationBar(authProvider),
       ),
     );
   }

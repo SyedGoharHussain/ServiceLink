@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-//import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import '../../providers/auth_provider.dart';
 import '../../providers/request_provider.dart';
 import '../../services/storage_service.dart';
-//import '../../models/user_model.dart';
+import '../../services/image_base64_service.dart';
 import '../../utils/constants.dart';
 import '../auth/signin_screen.dart';
 
@@ -21,7 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     with WidgetsBindingObserver {
   final _storageService = StorageService();
   bool _isEditing = false;
-  File? _imageFile;
+  String? _imageBase64;
 
   late TextEditingController _nameController;
   late TextEditingController _cityController;
@@ -87,10 +85,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _pickImage() async {
-    final file = await _storageService.pickImageFromGallery();
-    if (file != null) {
+    final base64 = await _storageService.pickImageFromGallery();
+    if (base64 != null) {
       setState(() {
-        _imageFile = file;
+        _imageBase64 = base64;
       });
     }
   }
@@ -99,14 +97,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     final authProvider = context.read<AuthProvider>();
     final user = authProvider.userModel!;
 
-    String? imageUrl = user.profileImage;
+    String? imageBase64 = user.profileImage;
 
-    // Upload image if selected
-    if (_imageFile != null) {
-      imageUrl = await _storageService.uploadProfileImage(
-        imageFile: _imageFile!,
-        userId: user.uid,
-      );
+    // Use new base64 image if selected
+    if (_imageBase64 != null) {
+      imageBase64 = _imageBase64;
     }
 
     // Update user model
@@ -116,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       serviceType: _selectedServiceType,
       rate: double.tryParse(_rateController.text),
       description: _descriptionController.text,
-      profileImage: imageUrl,
+      profileImage: imageBase64,
       updatedAt: DateTime.now(),
     );
 
@@ -125,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (success && mounted) {
       setState(() {
         _isEditing = false;
-        _imageFile = null;
+        _imageBase64 = null;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully')),
@@ -178,13 +173,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!)
-                        : (user.profileImage != null
-                                  ? NetworkImage(user.profileImage!)
-                                  : null)
-                              as ImageProvider?,
-                    child: (user.profileImage == null && _imageFile == null)
+                    backgroundImage: _imageBase64 != null
+                        ? ImageBase64Service.base64ToImageProvider(_imageBase64)
+                        : ImageBase64Service.base64ToImageProvider(
+                            user.profileImage,
+                          ),
+                    child: (user.profileImage == null && _imageBase64 == null)
                         ? Text(
                             user.name[0].toUpperCase(),
                             style: const TextStyle(

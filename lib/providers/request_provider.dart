@@ -59,10 +59,10 @@ class RequestProvider with ChangeNotifier {
       print('Request created successfully with ID: $requestId');
 
       // Send notification to worker
-      await _notificationService.sendRequestPendingNotification(
-        workerId: workerId,
-        customerName: customerName,
-        serviceType: serviceType,
+      await _notificationService.sendRequestNotification(
+        recipientId: workerId,
+        title: 'New Service Request',
+        body: '$customerName requested $serviceType service',
         requestId: requestId,
       );
 
@@ -110,10 +110,11 @@ class RequestProvider with ChangeNotifier {
       final request = _requests.firstWhere((r) => r.requestId == requestId);
 
       // Send notification to customer
-      await _notificationService.sendRequestAcceptedNotification(
-        customerId: request.customerId,
-        workerName: request.workerName,
-        serviceType: request.serviceType,
+      await _notificationService.sendRequestNotification(
+        recipientId: request.customerId,
+        title: 'Request Accepted',
+        body:
+            '${request.workerName} accepted your ${request.serviceType} request',
         requestId: requestId,
       );
 
@@ -143,10 +144,11 @@ class RequestProvider with ChangeNotifier {
       final request = _requests.firstWhere((r) => r.requestId == requestId);
 
       // Send notification to customer
-      await _notificationService.sendRequestRejectedNotification(
-        customerId: request.customerId,
-        workerName: request.workerName,
-        serviceType: request.serviceType,
+      await _notificationService.sendRequestNotification(
+        recipientId: request.customerId,
+        title: 'Request Rejected',
+        body:
+            '${request.workerName} declined your ${request.serviceType} request',
         requestId: requestId,
       );
 
@@ -177,12 +179,12 @@ class RequestProvider with ChangeNotifier {
       final request = _requests.firstWhere((r) => r.requestId == requestId);
 
       // Send notification to customer
-      await _notificationService.sendRequestCompletedNotification(
-        userId: request.customerId,
-        otherUserName: request.workerName,
-        serviceType: request.serviceType,
+      await _notificationService.sendRequestNotification(
+        recipientId: request.customerId,
+        title: 'Task Completed',
+        body:
+            '${request.workerName} completed your ${request.serviceType} request',
         requestId: requestId,
-        isWorker: false, // Customer is receiving the notification
       );
 
       _isLoading = false;

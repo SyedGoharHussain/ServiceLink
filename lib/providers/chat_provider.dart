@@ -72,6 +72,7 @@ class ChatProvider with ChangeNotifier {
     required String senderId,
     required String senderName,
     required String text,
+    bool isViewingChat = false,
   }) async {
     try {
       if (text.trim().isEmpty) return false;
@@ -81,6 +82,7 @@ class ChatProvider with ChangeNotifier {
         senderId: senderId,
         senderName: senderName,
         text: text.trim(),
+        isViewingChat: isViewingChat,
       );
 
       return true;
@@ -89,6 +91,24 @@ class ChatProvider with ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  /// Mark messages as read for a specific chat
+  Future<void> markMessagesAsRead(String chatId, String userId) async {
+    try {
+      await _chatService.markMessagesAsRead(chatId: chatId, userId: userId);
+    } catch (e) {
+      print('Error marking messages as read: $e');
+    }
+  }
+
+  /// Get total unread message count for user
+  int getTotalUnreadCount(String userId) {
+    int total = 0;
+    for (var chat in _chats) {
+      total += chat.unreadCount[userId] ?? 0;
+    }
+    return total;
   }
 
   /// Create or get chat with another user

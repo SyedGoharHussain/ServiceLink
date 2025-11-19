@@ -28,9 +28,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   @override
   void initState() {
     super.initState();
-    // Load messages when screen opens
+    // Load messages and mark as read when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ChatProvider>().loadMessages(widget.chatId);
+      final authProvider = context.read<AuthProvider>();
+      final chatProvider = context.read<ChatProvider>();
+
+      chatProvider.loadMessages(widget.chatId);
+
+      // Mark messages as read when opening chat
+      if (authProvider.userModel != null) {
+        chatProvider.markMessagesAsRead(
+          widget.chatId,
+          authProvider.userModel!.uid,
+        );
+      }
     });
   }
 
@@ -62,11 +73,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return;
     }
 
+    // Pass isViewingChat=true since user is in the chat screen
     final success = await context.read<ChatProvider>().sendMessage(
       chatId: widget.chatId,
       senderId: authProvider.userModel!.uid,
       senderName: authProvider.userModel!.name,
       text: _messageController.text.trim(),
+      isViewingChat: true,
     );
 
     if (success) {

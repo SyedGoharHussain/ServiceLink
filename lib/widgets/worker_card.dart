@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import '../services/image_base64_service.dart';
 import '../utils/constants.dart';
 
 /// Worker card widget for displaying worker information
@@ -27,9 +27,9 @@ class WorkerCard extends StatelessWidget {
               CircleAvatar(
                 radius: 30,
                 backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
-                backgroundImage: worker.profileImage != null
-                    ? CachedNetworkImageProvider(worker.profileImage!)
-                    : null,
+                backgroundImage: ImageBase64Service.base64ToImageProvider(
+                  worker.profileImage,
+                ),
                 child: worker.profileImage == null
                     ? Text(
                         worker.name[0].toUpperCase(),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import '../../services/image_base64_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user_model.dart';
 import '../../models/request_model.dart';
@@ -219,8 +219,8 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               background: widget.worker.profileImage != null
-                  ? CachedNetworkImage(
-                      imageUrl: widget.worker.profileImage!,
+                  ? ImageBase64Service.base64ToImage(
+                      widget.worker.profileImage!,
                       fit: BoxFit.cover,
                     )
                   : Container(

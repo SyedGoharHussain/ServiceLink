@@ -1,86 +1,54 @@
-import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:image_picker/image_picker.dart';
+import 'image_base64_service.dart';
 
-/// Storage service for handling Firebase Storage operations
+/// Storage service for handling image storage using base64 encoding
+/// This eliminates the need for Firebase Storage (which requires Blaze plan)
+/// Images are stored directly in Firestore as base64 strings
 class StorageService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-  final ImagePicker _picker = ImagePicker();
+  final ImageBase64Service _imageService = ImageBase64Service();
 
-  /// Pick image from gallery
-  Future<File?> pickImageFromGallery() async {
+  /// Pick image from gallery and convert to base64
+  Future<String?> pickImageFromGallery() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        return File(image.path);
-      }
-      return null;
+      return await _imageService.pickAndConvertToBase64FromGallery();
     } catch (e) {
       throw Exception('Failed to pick image: $e');
     }
   }
 
-  /// Pick image from camera
-  Future<File?> pickImageFromCamera() async {
+  /// Pick image from camera and convert to base64
+  Future<String?> pickImageFromCamera() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        return File(image.path);
-      }
-      return null;
+      return await _imageService.pickAndConvertToBase64FromCamera();
     } catch (e) {
       throw Exception('Failed to capture image: $e');
     }
   }
 
-  /// Upload profile image to Firebase Storage
+  /// Upload profile image (actually just returns base64 string)
+  /// Kept for backward compatibility with existing code
   Future<String> uploadProfileImage({
-    required File imageFile,
+    required dynamic imageFile, // Can be File or String (base64)
     required String userId,
   }) async {
     try {
-      final String fileName =
-          'profile_$userId${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final Reference ref = _storage
-          .ref()
-          .child('profile_images')
-          .child(fileName);
+      // If imageFile is already a base64 string, return it
+      if (imageFile is String) {
+        return imageFile;
+      }
 
-      // Upload file
-      final UploadTask uploadTask = ref.putFile(imageFile);
-
-      // Wait for upload to complete
-      final TaskSnapshot snapshot = await uploadTask;
-
-      // Get download URL
-      final String downloadUrl = await snapshot.ref.getDownloadURL();
-
-      return downloadUrl;
+      // This shouldn't happen with the new flow, but just in case
+      throw Exception(
+        'Invalid image format. Please use pickImageFromGallery or pickImageFromCamera',
+      );
     } catch (e) {
-      throw Exception('Failed to upload image: $e');
+      throw Exception('Failed to process image: $e');
     }
   }
 
-  /// Delete image from Firebase Storage
+  /// Delete image (no-op for base64, kept for compatibility)
   Future<void> deleteImage(String imageUrl) async {
-    try {
-      final Reference ref = _storage.refFromURL(imageUrl);
-      await ref.delete();
-    } catch (e) {
-      // Silently fail if image doesn't exist
-      print('Failed to delete image: $e');
-    }
+    // No action needed for base64 - image is just stored in Firestore
+    // This method is kept for backward compatibility
+    return;
   }
 }

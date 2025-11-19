@@ -75,6 +75,7 @@ class ChatService {
     required String senderId,
     required String senderName,
     required String text,
+    bool isViewingChat = false,
   }) async {
     try {
       final messageRef = _database.ref('chats/$chatId/messages').push();
@@ -87,23 +88,34 @@ class ChatService {
 
       await messageRef.set(message.toMap());
 
-      // Update last message in chat
-      await _database.ref('chats/$chatId').update({
-        'lastMessage': text,
-        'lastMessageTime': message.timestamp.millisecondsSinceEpoch,
-      });
-
-      // Send notification to recipient
-      // Extract the recipient ID from chatId (it's the other participant)
+      // Extract the recipient ID from chatId
       final participants = chatId.split('_');
       final recipientId = participants.firstWhere((id) => id != senderId);
 
-      await _notificationService.sendChatNotification(
-        recipientId: recipientId,
-        senderName: senderName,
-        message: text,
-        chatId: chatId,
-      );
+      // Get current unread count
+      final chatSnapshot = await _database.ref('chats/$chatId').get();
+      final chatData = chatSnapshot.value as Map<dynamic, dynamic>? ?? {};
+      final unreadCount = Map<String, int>.from(chatData['unreadCount'] ?? {});
+
+      // Increment unread count for recipient
+      unreadCount[recipientId] = (unreadCount[recipientId] ?? 0) + 1;
+
+      // Update last message in chat and unread count
+      await _database.ref('chats/$chatId').update({
+        'lastMessage': text,
+        'lastMessageTime': message.timestamp.millisecondsSinceEpoch,
+        'unreadCount': unreadCount,
+      });
+
+      // Only send notification if recipient is not viewing the chat
+      if (!isViewingChat) {
+        await _notificationService.sendChatNotification(
+          recipientId: recipientId,
+          senderName: senderName,
+          message: text,
+          chatId: chatId,
+        );
+      }
     } catch (e) {
       throw Exception('Failed to send message: $e');
     }
@@ -170,12 +182,27 @@ class ChatService {
     }
   }
 
-  /// Mark messages as read
+  /// Mark messages as read and reset unread count
   Future<void> markMessagesAsRead({
     required String chatId,
     required String userId,
   }) async {
     try {
+      // Reset unread count for this user
+      final chatRef = _database.ref('chats/$chatId');
+      final chatSnapshot = await chatRef.get();
+
+      if (chatSnapshot.exists) {
+        final chatData = chatSnapshot.value as Map<dynamic, dynamic>? ?? {};
+        final unreadCount = Map<String, int>.from(
+          chatData['unreadCount'] ?? {},
+        );
+        unreadCount[userId] = 0;
+
+        await chatRef.update({'unreadCount': unreadCount});
+      }
+
+      // Mark individual messages as read
       final messagesRef = _database.ref('chats/$chatId/messages');
       final snapshot = await messagesRef.get();
 

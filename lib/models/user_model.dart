@@ -11,7 +11,7 @@ class UserModel {
   serviceType; // For workers: 'carpenter', 'plumber', 'electrician', 'mechanic', etc.
   final double? rate; // Hourly rate for workers
   final String? description; // Worker description/bio
-  final String? profileImage; // Firebase Storage URL
+  final String? profileImage; // Base64 encoded image string
   final double rating; // Average rating
   final int reviewCount; // Number of reviews
   final String? fcmToken; // For push notifications
