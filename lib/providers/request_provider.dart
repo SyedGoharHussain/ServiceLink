@@ -31,14 +31,11 @@ class RequestProvider with ChangeNotifier {
     required String city,
     required double price,
     required String description,
+    double? latitude,
+    double? longitude,
+    String? locationAddress,
   }) async {
     try {
-      print('Creating request...');
-      print('Customer: $customerName');
-      print('Worker: $workerName');
-      print('Service: $serviceType');
-      print('Price: $price');
-
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
@@ -53,12 +50,14 @@ class RequestProvider with ChangeNotifier {
         city: city,
         price: price,
         description: description,
+        latitude: latitude,
+        longitude: longitude,
+        locationAddress: locationAddress,
       );
 
       final requestId = await _firestoreService.createRequest(request);
-      print('Request created successfully with ID: $requestId');
 
-      // Send notification to worker
+      // Send notification to worker only
       await _notificationService.sendRequestNotification(
         recipientId: workerId,
         title: 'New Service Request',
@@ -202,44 +201,32 @@ class RequestProvider with ChangeNotifier {
   Future<bool> addReview({
     required String requestId,
     required double rating,
-    required String review,
+    String? review,
   }) async {
     try {
-      print('RequestProvider: Starting addReview...');
-      print('RequestProvider: Request ID: $requestId');
-      print('RequestProvider: Rating: $rating');
-      print('RequestProvider: Review: $review');
-
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
 
       // Get the request to find worker ID
-      print('RequestProvider: Fetching request details...');
       final request = await _firestoreService.getRequest(requestId);
       if (request == null) {
         print('RequestProvider ERROR: Request not found');
         throw Exception('Request not found');
       }
-      print('RequestProvider: Request found, worker ID: ${request.workerId}');
 
       // Add review to request
-      print('RequestProvider: Adding review to request...');
       await _firestoreService.addReviewToRequest(
         requestId: requestId,
-        review: review,
+        review: review ?? '',
         rating: rating,
       );
-      print('RequestProvider: Review added successfully');
 
       // Update worker's average rating
-      print('RequestProvider: Updating worker rating...');
       await _firestoreService.updateWorkerRating(request.workerId);
-      print('RequestProvider: Worker rating updated successfully');
 
       _isLoading = false;
       notifyListeners();
-      print('RequestProvider: addReview completed successfully');
       return true;
     } catch (e, stackTrace) {
       _isLoading = false;

@@ -52,15 +52,11 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _refreshProfile() async {
     if (!mounted) return;
     try {
-      print('Profile screen: Refreshing...');
       final authProvider = context.read<AuthProvider>();
       await authProvider.refreshUserProfile();
       // Update controllers if profile changed
       if (mounted) {
         final user = authProvider.userModel;
-        print(
-          'Profile screen: User rating ${user?.rating}, reviews ${user?.reviewCount}',
-        );
         setState(() {
           _nameController.text = user?.name ?? '';
           _cityController.text = user?.city ?? '';

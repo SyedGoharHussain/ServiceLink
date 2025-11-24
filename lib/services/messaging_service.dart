@@ -96,11 +96,9 @@ class MessagingService {
       notificationDetails,
       payload: payload,
     );
-
-    print('✅ Local notification shown: $title');
   }
 
-  /// Initialize Firebase Messaging
+  /// Initialize messaging
   Future<void> initialize() async {
     try {
       // Initialize local notifications

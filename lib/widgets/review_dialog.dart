@@ -29,45 +29,25 @@ class _ReviewDialogState extends State<ReviewDialog> {
     super.dispose();
   }
 
-  Future<void> _submitReview() async {
-    print('=== SUBMIT REVIEW BUTTON PRESSED ===');
-    print('Review text: ${_reviewController.text}');
-    print('Rating: $_rating');
-
+  void _submitReview() async {
     if (_reviewController.text.trim().isEmpty) {
-      print('Review text is empty, showing error');
       return;
     }
 
-    print('Setting isSubmitting to true');
     setState(() => _isSubmitting = true);
 
     try {
-      print('Starting review submission...');
-      print('Request ID: ${widget.request.requestId}');
-      print('Worker ID: ${widget.request.workerId}');
-      print('Rating: $_rating');
-      print('Review: ${_reviewController.text.trim()}');
-
-      print('Calling requestProvider.addReview...');
       final success = await widget.requestProvider.addReview(
         requestId: widget.request.requestId,
         rating: _rating,
         review: _reviewController.text.trim(),
       );
 
-      print('addReview returned: $success');
       if (!mounted) return;
 
       if (success) {
-        print(
-          'Review submitted successfully, closing dialog with success=true',
-        );
         Navigator.of(context).pop(true);
       } else {
-        print(
-          'Review submission failed: ${widget.requestProvider.errorMessage}',
-        );
         Navigator.of(context).pop(false);
       }
     } catch (e) {

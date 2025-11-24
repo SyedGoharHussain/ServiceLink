@@ -50,8 +50,6 @@ class NotificationService {
           'timestamp': FieldValue.serverTimestamp(),
           'processed': false,
         });
-
-        print('✅ Chat notification queued for $recipientId');
       }
     } catch (e) {
       print('Error sending chat notification: $e');
@@ -97,8 +95,6 @@ class NotificationService {
           'timestamp': FieldValue.serverTimestamp(),
           'processed': false,
         });
-
-        print('✅ Request notification queued for $recipientId');
       }
     } catch (e) {
       print('Error sending request notification: $e');

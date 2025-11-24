@@ -17,6 +17,9 @@ class RequestModel {
   final DateTime? completedAt;
   final String? customerReview;
   final double? customerRating;
+  final double? latitude;
+  final double? longitude;
+  final String? locationAddress;
 
   RequestModel({
     required this.requestId,
@@ -34,6 +37,9 @@ class RequestModel {
     this.completedAt,
     this.customerReview,
     this.customerRating,
+    this.latitude,
+    this.longitude,
+    this.locationAddress,
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// Convert RequestModel to Map for Firestore
@@ -56,6 +62,9 @@ class RequestModel {
           : null,
       'customerReview': customerReview,
       'customerRating': customerRating,
+      'latitude': latitude,
+      'longitude': longitude,
+      'locationAddress': locationAddress,
     };
   }
 
@@ -77,6 +86,9 @@ class RequestModel {
       completedAt: (map['completedAt'] as Timestamp?)?.toDate(),
       customerReview: map['customerReview'],
       customerRating: map['customerRating']?.toDouble(),
+      latitude: map['latitude']?.toDouble(),
+      longitude: map['longitude']?.toDouble(),
+      locationAddress: map['locationAddress'],
     );
   }
 
@@ -97,6 +109,9 @@ class RequestModel {
     DateTime? completedAt,
     String? customerReview,
     double? customerRating,
+    double? latitude,
+    double? longitude,
+    String? locationAddress,
   }) {
     return RequestModel(
       requestId: requestId ?? this.requestId,
@@ -114,6 +129,9 @@ class RequestModel {
       completedAt: completedAt ?? this.completedAt,
       customerReview: customerReview ?? this.customerReview,
       customerRating: customerRating ?? this.customerRating,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      locationAddress: locationAddress ?? this.locationAddress,
     );
   }
 }

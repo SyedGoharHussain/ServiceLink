@@ -21,27 +21,20 @@ class ChatService {
   }) async {
     try {
       final chatId = getChatId(userId1, userId2);
-      print('ChatService: Chat ID will be: $chatId');
 
       final chatRef = _database.ref('chats/$chatId');
-      print('ChatService: Checking if chat exists...');
 
       // Check if chat exists with timeout
       final snapshot = await chatRef.get().timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          print(
-            'ChatService: Timeout checking chat, will try to create anyway',
-          );
           throw Exception(
             'Timeout: Please check Firebase Realtime Database rules are deployed',
           );
         },
       );
-      print('ChatService: Chat exists: ${snapshot.exists}');
 
       if (!snapshot.exists) {
-        print('ChatService: Creating new chat...');
         // Create new chat
         final chat = ChatModel(
           chatId: chatId,
@@ -53,15 +46,11 @@ class ChatService {
             .timeout(
               const Duration(seconds: 10),
               onTimeout: () {
-                print('ChatService: Timeout creating chat');
                 throw Exception(
                   'Timeout: Please check Firebase Realtime Database rules',
                 );
               },
             );
-        print('ChatService: Chat created successfully');
-      } else {
-        print('ChatService: Using existing chat');
       }
     } catch (e) {
       print('ChatService ERROR: $e');

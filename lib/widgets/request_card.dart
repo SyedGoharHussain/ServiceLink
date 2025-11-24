@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/request_model.dart';
 import '../providers/request_provider.dart';
 import '../providers/chat_provider.dart';
@@ -33,6 +34,30 @@ class RequestCard extends StatelessWidget {
 
   String _getStatusText() {
     return request.status[0].toUpperCase() + request.status.substring(1);
+  }
+
+  Future<void> _openMap(double latitude, double longitude) async {
+    // Try Google Maps URL first
+    final googleMapsUrl = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
+    );
+
+    // Try geo URI as fallback
+    final geoUrl = Uri.parse('geo:$latitude,$longitude?q=$latitude,$longitude');
+
+    try {
+      // Try launching with external application mode
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(geoUrl)) {
+        await launchUrl(geoUrl, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not open maps';
+      }
+    } catch (e) {
+      // Show error to user
+      print('Error opening map: $e');
+    }
   }
 
   @override
@@ -86,6 +111,8 @@ class RequestCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppConstants.textSecondaryColor,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
 
             const SizedBox(height: 4),
@@ -99,9 +126,12 @@ class RequestCard extends StatelessWidget {
                   color: AppConstants.textSecondaryColor,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  request.city,
-                  style: Theme.of(context).textTheme.bodySmall,
+                Flexible(
+                  child: Text(
+                    request.city,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 const Icon(
@@ -116,6 +146,57 @@ class RequestCard extends StatelessWidget {
                 ),
               ],
             ),
+
+            // Map Location Button - show for workers only
+            if (request.latitude != null && request.longitude != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppConstants.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppConstants.primaryColor.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: InkWell(
+                  onTap: () => _openMap(request.latitude!, request.longitude!),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 20,
+                          color: AppConstants.primaryColor,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'View Location on Map',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: AppConstants.primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.open_in_new,
+                          size: 16,
+                          color: AppConstants.primaryColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
 
             const SizedBox(height: AppConstants.paddingSmall),
 
@@ -137,6 +218,31 @@ class RequestCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
+
+            // Location shared indicator
+            if (request.latitude != null && request.longitude != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    size: 16,
+                    color: AppConstants.successColor,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      'Location shared',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppConstants.successColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
 
             const SizedBox(height: AppConstants.paddingSmall),
 
@@ -305,8 +411,6 @@ class RequestCard extends StatelessWidget {
                                   );
                                   return;
                                 }
-
-                                print('DEBUG: Navigating to chat room...');
                                 // Navigate to chat room
                                 await Navigator.push(
                                   context,

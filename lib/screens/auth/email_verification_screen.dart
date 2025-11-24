@@ -81,8 +81,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     try {
       await _authService.sendEmailVerification();
 
-      print('✅ Verification email sent to ${widget.email}');
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

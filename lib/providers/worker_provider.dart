@@ -52,10 +52,8 @@ class WorkerProvider with ChangeNotifier {
         final index = _workers.indexWhere((w) => w.uid == workerId);
         if (index != -1) {
           _workers[index] = updatedWorker;
-          print('WorkerProvider: Worker updated at index $index');
           notifyListeners();
         } else {
-          print('WorkerProvider: Worker not found in list, adding...');
           _workers.add(updatedWorker);
           notifyListeners();
         }

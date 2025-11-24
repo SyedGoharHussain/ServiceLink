@@ -199,18 +199,12 @@ class FirestoreService {
   /// Update worker rating (called after review is added)
   Future<void> updateWorkerRating(String workerId) async {
     try {
-      print('FirestoreService: Updating worker rating for $workerId');
-
       // Get all completed requests for this worker with ratings
       final requestsSnapshot = await _firestore
           .collection(AppConstants.requestsCollection)
           .where('workerId', isEqualTo: workerId)
           .where('status', isEqualTo: AppConstants.statusCompleted)
           .get();
-
-      print(
-        'FirestoreService: Found ${requestsSnapshot.docs.length} completed requests',
-      );
 
       // Calculate average rating
       double totalRating = 0;

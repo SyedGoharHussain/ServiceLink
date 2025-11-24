@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../services/image_base64_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user_model.dart';
@@ -33,158 +34,325 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
   Future<void> _showHireDialog() async {
     // Capture the parent context before dialog
     final parentContext = context;
+    bool shareLocation = true;
 
     await showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Send Job Request'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _priceController,
-                decoration: const InputDecoration(
-                  labelText: 'Your Budget (\$)',
-                  prefixIcon: Icon(Icons.attach_money),
-                ),
-                keyboardType: TextInputType.number,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Send Job Request'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _priceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Your Budget (\$)',
+                      prefixIcon: Icon(Icons.attach_money),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Job Description',
+                      prefixIcon: Icon(Icons.description),
+                    ),
+                    maxLines: 4,
+                  ),
+                  const SizedBox(height: 16),
+                  CheckboxListTile(
+                    title: const Text('Share my current location'),
+                    subtitle: const Text('Helps worker find you easily'),
+                    value: shareLocation,
+                    onChanged: (value) {
+                      setState(() {
+                        shareLocation = value ?? true;
+                      });
+                    },
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Job Description',
-                  prefixIcon: Icon(Icons.description),
-                ),
-                maxLines: 4,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  // Validate fields
+                  if (_priceController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter your budget'),
+                        backgroundColor: AppConstants.errorColor,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (_descriptionController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter job description'),
+                        backgroundColor: AppConstants.errorColor,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final price = double.tryParse(_priceController.text.trim());
+                  if (price == null || price <= 0) {
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter a valid price'),
+                        backgroundColor: AppConstants.errorColor,
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Close dialog first to avoid multiple clicks
+                  Navigator.pop(dialogContext);
+
+                  try {
+                    // Get location if requested
+                    double? latitude;
+                    double? longitude;
+                    String? locationAddress;
+
+                    if (shareLocation) {
+                      // Show loading message
+                      if (mounted) {
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Getting your location...'),
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      }
+
+                      // Directly request permission and get location
+                      final position = await _determinePosition(parentContext);
+                      if (position != null) {
+                        latitude = position.latitude;
+                        longitude = position.longitude;
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(parentContext).clearSnackBars();
+                          ScaffoldMessenger.of(parentContext).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                '✓ Location captured successfully!',
+                              ),
+                              duration: Duration(seconds: 2),
+                              backgroundColor: AppConstants.successColor,
+                            ),
+                          );
+                        }
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(parentContext).clearSnackBars();
+                        }
+                      }
+                    }
+                    final authProvider = parentContext.read<AuthProvider>();
+                    final requestProvider = parentContext
+                        .read<RequestProvider>();
+                    final customer = authProvider.userModel;
+
+                    if (customer == null) {
+                      throw Exception('Customer user model is null');
+                    }
+
+                    final success = await requestProvider.createRequest(
+                      customerId: customer.uid,
+                      customerName: customer.name,
+                      workerId: widget.worker.uid,
+                      workerName: widget.worker.name,
+                      serviceType: widget.worker.serviceType!,
+                      city: widget.worker.city!,
+                      price: price,
+                      description: _descriptionController.text.trim(),
+                      latitude: latitude,
+                      longitude: longitude,
+                      locationAddress: locationAddress,
+                    );
+
+                    if (!mounted) return;
+
+                    // Clear fields
+                    _priceController.clear();
+                    _descriptionController.clear();
+
+                    // Show result using parent context
+                    if (success) {
+                      ScaffoldMessenger.of(parentContext).showSnackBar(
+                        const SnackBar(
+                          content: Text('Request sent successfully!'),
+                          backgroundColor: AppConstants.successColor,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(parentContext).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            requestProvider.errorMessage ??
+                                'Failed to send request',
+                          ),
+                          backgroundColor: AppConstants.errorColor,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (!mounted) return;
+
+                    // Show error using parent context
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${e.toString()}'),
+                        backgroundColor: AppConstants.errorColor,
+                        duration: const Duration(seconds: 5),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Send Request'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              // Validate fields
-              if (_priceController.text.trim().isEmpty) {
-                Navigator.pop(dialogContext);
-                ScaffoldMessenger.of(parentContext).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter your budget'),
-                    backgroundColor: AppConstants.errorColor,
-                  ),
-                );
-                return;
-              }
-
-              if (_descriptionController.text.trim().isEmpty) {
-                Navigator.pop(dialogContext);
-                ScaffoldMessenger.of(parentContext).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter job description'),
-                    backgroundColor: AppConstants.errorColor,
-                  ),
-                );
-                return;
-              }
-
-              final price = double.tryParse(_priceController.text.trim());
-              if (price == null || price <= 0) {
-                Navigator.pop(dialogContext);
-                ScaffoldMessenger.of(parentContext).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter a valid price'),
-                    backgroundColor: AppConstants.errorColor,
-                  ),
-                );
-                return;
-              }
-
-              try {
-                print('Button pressed - starting request creation');
-                final authProvider = parentContext.read<AuthProvider>();
-                final requestProvider = parentContext.read<RequestProvider>();
-                final customer = authProvider.userModel;
-
-                if (customer == null) {
-                  throw Exception('Customer user model is null');
-                }
-
-                print('Customer: ${customer.uid} - ${customer.name}');
-                print('Worker: ${widget.worker.uid} - ${widget.worker.name}');
-                print('Service: ${widget.worker.serviceType}');
-                print('City: ${widget.worker.city}');
-                print('Price: $price');
-
-                final success = await requestProvider.createRequest(
-                  customerId: customer.uid,
-                  customerName: customer.name,
-                  workerId: widget.worker.uid,
-                  workerName: widget.worker.name,
-                  serviceType: widget.worker.serviceType!,
-                  city: widget.worker.city!,
-                  price: price,
-                  description: _descriptionController.text.trim(),
-                );
-
-                print('Request creation result: $success');
-
-                if (!mounted) return;
-
-                // Close dialog first
-                Navigator.pop(dialogContext);
-
-                // Clear fields
-                _priceController.clear();
-                _descriptionController.clear();
-
-                // Show result using parent context
-                if (success) {
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    const SnackBar(
-                      content: Text('Request sent successfully!'),
-                      backgroundColor: AppConstants.successColor,
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        requestProvider.errorMessage ??
-                            'Failed to send request',
-                      ),
-                      backgroundColor: AppConstants.errorColor,
-                    ),
-                  );
-                }
-              } catch (e, stackTrace) {
-                print('Worker detail screen error: $e');
-                print('Stack trace: $stackTrace');
-
-                if (!mounted) return;
-
-                // Close dialog
-                Navigator.pop(dialogContext);
-
-                // Show error using parent context
-                ScaffoldMessenger.of(parentContext).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: ${e.toString()}'),
-                    backgroundColor: AppConstants.errorColor,
-                    duration: const Duration(seconds: 5),
-                  ),
-                );
-              }
-            },
-            child: const Text('Send Request'),
-          ),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  Future<Position?> _determinePosition(BuildContext context) async {
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (!mounted) return null;
+
+        final bool? openSettings = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: const Text('Location Services Disabled'),
+              content: const Text(
+                'Location services are turned off. Please enable location services in your device settings to share your location.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Open Settings'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (openSettings == true) {
+          await Geolocator.openLocationSettings();
+        }
+        return null;
+      }
+
+      // Check current permission status
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      // Handle denied permission
+      if (permission == LocationPermission.denied) {
+        // Request permission
+        permission = await Geolocator.requestPermission();
+
+        if (permission == LocationPermission.denied) {
+          if (!mounted) return null;
+
+          await showDialog(
+            context: context,
+            builder: (BuildContext dialogContext) {
+              return AlertDialog(
+                title: const Text('Permission Denied'),
+                content: const Text(
+                  'Location permission was denied. You need to allow location access to share your location with workers.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+          return null;
+        }
+      }
+
+      // Handle permanently denied permission
+      if (permission == LocationPermission.deniedForever) {
+        if (!mounted) return null;
+
+        final bool? openSettings = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: const Text('Location Permission Required'),
+              content: const Text(
+                'Location permission is permanently denied. Please enable it manually in app settings to share your location with workers.\n\n'
+                'Go to: Settings > Apps > mids_project > Permissions > Location',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Open Settings'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (openSettings == true) {
+          await Geolocator.openAppSettings();
+        }
+        return null;
+      }
+
+      // Permission granted, get current position
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return null;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error getting location: ${e.toString()}'),
+          backgroundColor: AppConstants.errorColor,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return null;
+    }
   }
 
   @override
