@@ -61,9 +61,6 @@ dependencies:
   intl: ^0.19.0
   flutter_rating_bar: ^4.0.1
   
-  # Email and OTP
-  mailer: ^6.1.2
-  
   # Google Fonts for Poppins
   google_fonts: ^6.2.1
   geolocator: ^14.0.2
@@ -94,6 +91,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/google.png
+    - assets/images/logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

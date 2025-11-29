@@ -24,14 +24,22 @@ class AuthProvider with ChangeNotifier {
 
   /// Initialize auth state
   void initialize() {
+    // Check current user immediately (synchronous)
+    _firebaseUser = _authService.currentUser;
+
+    // Load profile if user is already logged in
+    if (_firebaseUser != null) {
+      _fetchUserProfile(_firebaseUser!.uid).then((_) {
+        _messagingService.updateUserToken(_firebaseUser!.uid);
+      });
+    }
+
+    // Listen to auth state changes
     _authService.authStateChanges.listen((User? user) async {
-      print('Auth state changed: ${user?.uid}');
       _firebaseUser = user;
 
       if (user != null) {
-        print('Loading user profile for: ${user.uid}');
-        await loadUserProfile(user.uid);
-        print('User profile loaded: ${_userModel?.name}');
+        await _fetchUserProfile(user.uid);
         await _messagingService.updateUserToken(user.uid);
       } else {
         _userModel = null;
@@ -42,11 +50,9 @@ class AuthProvider with ChangeNotifier {
   }
 
   /// Load user profile from Firestore
-  Future<void> loadUserProfile(String uid) async {
+  Future<void> _fetchUserProfile(String uid) async {
     try {
-      print('Fetching user from Firestore: $uid');
       _userModel = await _firestoreService.getUser(uid);
-      print('User model fetched: ${_userModel?.toMap()}');
       notifyListeners();
     } catch (e) {
       print('Error loading user profile: $e');
@@ -58,7 +64,6 @@ class AuthProvider with ChangeNotifier {
   /// Sign in with email and password
   Future<bool> signInWithEmail(String email, String password) async {
     try {
-      print('Starting sign in for: $email');
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
@@ -67,13 +72,11 @@ class AuthProvider with ChangeNotifier {
         email: email,
         password: password,
       );
-      print('Sign in successful, user: ${userCredential.user?.uid}');
 
       // Manually set the firebase user and load profile
       _firebaseUser = userCredential.user;
       if (_firebaseUser != null) {
-        print('Loading user profile immediately after sign-in');
-        await loadUserProfile(_firebaseUser!.uid);
+        await _fetchUserProfile(_firebaseUser!.uid);
         await _messagingService.updateUserToken(_firebaseUser!.uid);
       }
 
@@ -178,7 +181,7 @@ class AuthProvider with ChangeNotifier {
         role: role,
       );
 
-      await loadUserProfile(_firebaseUser!.uid);
+      await _fetchUserProfile(_firebaseUser!.uid);
       return true;
     } catch (e) {
       _errorMessage = e.toString();

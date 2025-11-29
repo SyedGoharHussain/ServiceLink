@@ -103,139 +103,164 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFECE5DD),
       appBar: AppBar(title: Text(widget.otherUserName), elevation: 1),
-      body: Column(
+      body: Stack(
         children: [
-          // Messages list
-          Expanded(
-            child: chatProvider.currentMessages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No messages yet',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Start the conversation!',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    controller: _scrollController,
-                    reverse: true,
-                    padding: const EdgeInsets.all(AppConstants.paddingMedium),
-                    itemCount: chatProvider.currentMessages.length,
-                    itemBuilder: (context, index) {
-                      final message = chatProvider.currentMessages[index];
-                      final isMe =
-                          message.senderId == authProvider.userModel!.uid;
-
-                      // Check if we should show date separator
-                      bool showDateSeparator = false;
-                      if (index < chatProvider.currentMessages.length - 1) {
-                        final nextMessage =
-                            chatProvider.currentMessages[index + 1];
-                        final messageDate = DateTime.fromMillisecondsSinceEpoch(
-                          message.timestamp.millisecondsSinceEpoch,
-                        );
-                        final nextMessageDate =
-                            DateTime.fromMillisecondsSinceEpoch(
-                              nextMessage.timestamp.millisecondsSinceEpoch,
-                            );
-
-                        if (messageDate.day != nextMessageDate.day ||
-                            messageDate.month != nextMessageDate.month ||
-                            messageDate.year != nextMessageDate.year) {
-                          showDateSeparator = true;
-                        }
-                      } else {
-                        showDateSeparator = true;
-                      }
-
-                      return Column(
-                        children: [
-                          if (showDateSeparator)
-                            _DateSeparator(timestamp: message.timestamp),
-                          _MessageBubble(message: message, isMe: isMe),
-                        ],
-                      );
-                    },
-                  ),
-          ),
-
-          // Message input
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.paddingMedium,
-              vertical: 8,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+          // Background watermark logo
+          Positioned.fill(
+            child: Center(
+              child: Opacity(
+                opacity: 0.4,
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 300,
+                  height: 300,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const SizedBox.shrink();
+                  },
                 ),
-              ],
-            ),
-            child: SafeArea(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Container(
-                      constraints: const BoxConstraints(maxHeight: 120),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: TextField(
-                        controller: _messageController,
-                        decoration: const InputDecoration(
-                          hintText: 'Message',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
-                        ),
-                        maxLines: null,
-                        textCapitalization: TextCapitalization.sentences,
-                        onSubmitted: (_) => _sendMessage(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: AppConstants.primaryColor,
-                    child: IconButton(
-                      onPressed: _sendMessage,
-                      icon: const Icon(Icons.send, size: 20),
-                      color: Colors.white,
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
               ),
             ),
+          ),
+          // Chat content
+          Column(
+            children: [
+              // Messages list
+              Expanded(
+                child: chatProvider.currentMessages.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No messages yet',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Start the conversation!',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        reverse: true,
+                        padding: const EdgeInsets.all(
+                          AppConstants.paddingMedium,
+                        ),
+                        itemCount: chatProvider.currentMessages.length,
+                        itemBuilder: (context, index) {
+                          final message = chatProvider.currentMessages[index];
+                          final isMe =
+                              message.senderId == authProvider.userModel!.uid;
+
+                          // Check if we should show date separator
+                          bool showDateSeparator = false;
+                          if (index < chatProvider.currentMessages.length - 1) {
+                            final nextMessage =
+                                chatProvider.currentMessages[index + 1];
+                            final messageDate =
+                                DateTime.fromMillisecondsSinceEpoch(
+                                  message.timestamp.millisecondsSinceEpoch,
+                                );
+                            final nextMessageDate =
+                                DateTime.fromMillisecondsSinceEpoch(
+                                  nextMessage.timestamp.millisecondsSinceEpoch,
+                                );
+
+                            if (messageDate.day != nextMessageDate.day ||
+                                messageDate.month != nextMessageDate.month ||
+                                messageDate.year != nextMessageDate.year) {
+                              showDateSeparator = true;
+                            }
+                          } else {
+                            showDateSeparator = true;
+                          }
+
+                          return Column(
+                            children: [
+                              if (showDateSeparator)
+                                _DateSeparator(timestamp: message.timestamp),
+                              _MessageBubble(message: message, isMe: isMe),
+                            ],
+                          );
+                        },
+                      ),
+              ),
+
+              // Message input
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.paddingMedium,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          constraints: const BoxConstraints(maxHeight: 120),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: TextField(
+                            controller: _messageController,
+                            decoration: const InputDecoration(
+                              hintText: 'Message',
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 10,
+                              ),
+                            ),
+                            maxLines: null,
+                            textCapitalization: TextCapitalization.sentences,
+                            onSubmitted: (_) => _sendMessage(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: AppConstants.primaryColor,
+                        child: IconButton(
+                          onPressed: _sendMessage,
+                          icon: const Icon(Icons.send, size: 20),
+                          color: Colors.white,
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

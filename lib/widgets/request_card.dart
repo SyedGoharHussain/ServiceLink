@@ -55,8 +55,7 @@ class RequestCard extends StatelessWidget {
         throw 'Could not open maps';
       }
     } catch (e) {
-      // Show error to user
-      print('Error opening map: $e');
+      // Silent fail - map couldn't open
     }
   }
 

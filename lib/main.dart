@@ -9,6 +9,7 @@ import 'providers/request_provider.dart';
 import 'providers/worker_provider.dart';
 import 'providers/chat_provider.dart';
 import 'services/messaging_service.dart';
+import 'services/notification_service.dart';
 import 'screens/others/splash_screen.dart';
 import 'screens/auth/signin_screen.dart';
 import 'screens/others/main_screen.dart';
@@ -117,7 +118,11 @@ class _AppInitializerState extends State<AppInitializer> {
 
   Future<void> _initializeApp() async {
     try {
-      // Initialize FCM
+      // Initialize FREE local notifications (no billing!)
+      final notificationService = NotificationService();
+      await notificationService.initialize();
+
+      // Initialize FCM for basic token management (free tier)
       final messagingService = MessagingService();
       await messagingService.initialize();
       messagingService.setupMessageHandlers();
@@ -179,9 +184,10 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        print(
-          'AuthWrapper - isAuthenticated: ${authProvider.isAuthenticated}, hasUserModel: ${authProvider.userModel != null}',
-        );
+        // Show splash while loading user profile (prevents flicker)
+        if (authProvider.isAuthenticated && authProvider.userModel == null) {
+          return const SplashScreen();
+        }
 
         // Check if user needs email verification
         if (authProvider.isAuthenticated &&
@@ -190,32 +196,21 @@ class AuthWrapper extends StatelessWidget {
             authProvider.firebaseUser!.providerData.any(
               (info) => info.providerId == 'password',
             )) {
-          print('Showing email verification screen');
           return EmailVerificationScreen(
             email: authProvider.firebaseUser!.email ?? '',
           );
         }
 
-        // Show loading while fetching user profile after authentication
-        if (authProvider.isAuthenticated && authProvider.userModel == null) {
-          print(
-            'Showing loading screen - user authenticated but profile not loaded yet',
-          );
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
         // Show main screen if authenticated with complete profile
         if (authProvider.isAuthenticated && authProvider.userModel != null) {
-          print(
-            'Showing main screen for user: ${authProvider.userModel!.name}',
+          // Start FREE notification listener for this user
+          NotificationService().listenToNotifications(
+            authProvider.userModel!.uid,
           );
           return const MainScreen();
         }
 
         // Show sign in screen for unauthenticated users
-        print('Showing sign in screen');
         return const SignInScreen();
       },
     );

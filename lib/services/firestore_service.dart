@@ -181,15 +181,10 @@ class FirestoreService {
     required double rating,
   }) async {
     try {
-      print('FirestoreService: Adding review to request $requestId');
-      print('FirestoreService: Rating: $rating, Review: $review');
-
       await _firestore
           .collection(AppConstants.requestsCollection)
           .doc(requestId)
           .update({'customerReview': review, 'customerRating': rating});
-
-      print('FirestoreService: Review added successfully');
     } catch (e) {
       print('FirestoreService ERROR: Failed to add review: $e');
       throw Exception('Failed to add review: $e');
@@ -240,19 +235,15 @@ class FirestoreService {
   /// Get request by ID
   Future<RequestModel?> getRequest(String requestId) async {
     try {
-      print('FirestoreService: Getting request with ID: $requestId');
       final doc = await _firestore
           .collection(AppConstants.requestsCollection)
           .doc(requestId)
           .get();
 
       if (doc.exists) {
-        print('FirestoreService: Request document found');
         final request = RequestModel.fromMap(doc.data()!);
-        print('FirestoreService: Request parsed successfully');
         return request;
       }
-      print('FirestoreService: Request document does not exist');
       return null;
     } catch (e) {
       print('FirestoreService ERROR: Failed to get request: $e');
