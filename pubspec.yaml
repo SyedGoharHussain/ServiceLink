@@ -65,6 +65,7 @@ dependencies:
   google_fonts: ^6.2.1
   geolocator: ^14.0.2
   url_launcher: ^6.3.2
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

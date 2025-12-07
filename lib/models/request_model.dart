@@ -20,6 +20,8 @@ class RequestModel {
   final double? latitude;
   final double? longitude;
   final String? locationAddress;
+  final int deadlineHours; // Deadline in hours (1-24)
+  final DateTime? deadlineTime; // Calculated deadline when accepted
 
   RequestModel({
     required this.requestId,
@@ -40,6 +42,8 @@ class RequestModel {
     this.latitude,
     this.longitude,
     this.locationAddress,
+    this.deadlineHours = 24,
+    this.deadlineTime,
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// Convert RequestModel to Map for Firestore
@@ -65,6 +69,10 @@ class RequestModel {
       'latitude': latitude,
       'longitude': longitude,
       'locationAddress': locationAddress,
+      'deadlineHours': deadlineHours,
+      'deadlineTime': deadlineTime != null
+          ? Timestamp.fromDate(deadlineTime!)
+          : null,
     };
   }
 
@@ -89,6 +97,8 @@ class RequestModel {
       latitude: map['latitude']?.toDouble(),
       longitude: map['longitude']?.toDouble(),
       locationAddress: map['locationAddress'],
+      deadlineHours: map['deadlineHours'] ?? 24,
+      deadlineTime: (map['deadlineTime'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -112,6 +122,8 @@ class RequestModel {
     double? latitude,
     double? longitude,
     String? locationAddress,
+    int? deadlineHours,
+    DateTime? deadlineTime,
   }) {
     return RequestModel(
       requestId: requestId ?? this.requestId,
@@ -132,6 +144,8 @@ class RequestModel {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       locationAddress: locationAddress ?? this.locationAddress,
+      deadlineHours: deadlineHours ?? this.deadlineHours,
+      deadlineTime: deadlineTime ?? this.deadlineTime,
     );
   }
 }

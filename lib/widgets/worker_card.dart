@@ -15,17 +15,18 @@ class WorkerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: AppConstants.paddingMedium),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      elevation: 2,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+          padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               // Profile image
               CircleAvatar(
-                radius: 30,
+                radius: 26,
                 backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
                 backgroundImage: ImageBase64Service.base64ToImageProvider(
                   worker.profileImage,
@@ -34,7 +35,7 @@ class WorkerCard extends StatelessWidget {
                     ? Text(
                         worker.name[0].toUpperCase(),
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppConstants.primaryColor,
                         ),
@@ -42,7 +43,7 @@ class WorkerCard extends StatelessWidget {
                     : null,
               ),
 
-              const SizedBox(width: AppConstants.paddingMedium),
+              const SizedBox(width: 12),
 
               // Worker info
               Expanded(
@@ -51,27 +52,39 @@ class WorkerCard extends StatelessWidget {
                   children: [
                     Text(
                       worker.name,
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
-                      '${worker.serviceType ?? "Professional"}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      worker.serviceType ?? "Professional",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppConstants.textSecondaryColor,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Row(
                       children: [
                         const Icon(
                           Icons.location_on,
-                          size: 14,
+                          size: 12,
                           color: AppConstants.textSecondaryColor,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          worker.city ?? 'Not specified',
-                          style: Theme.of(context).textTheme.bodySmall,
+                        const SizedBox(width: 2),
+                        Flexible(
+                          child: Text(
+                            worker.city ?? 'Not specified',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
@@ -82,6 +95,7 @@ class WorkerCard extends StatelessWidget {
               // Rating and rate
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
@@ -123,43 +137,45 @@ class WorkerCard extends StatelessWidget {
                       // Show rating or "New" based on data
                       if (reviewCount > 0) {
                         return Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(
                               Icons.star,
                               color: Colors.amber,
-                              size: 16,
+                              size: 14,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 2),
                             Text(
                               avgRating.toStringAsFixed(1),
-                              style: Theme.of(context).textTheme.bodyMedium
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
                         );
                       } else {
                         return Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(
                               Icons.star_outline,
                               color: Colors.grey,
-                              size: 16,
+                              size: 14,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 2),
                             Text(
                               'New',
                               style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: Colors.grey),
+                                  ?.copyWith(color: Colors.grey, fontSize: 11),
                             ),
                           ],
                         );
                       }
                     },
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     '\$${worker.rate?.toStringAsFixed(0) ?? "0"}/hr',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: AppConstants.primaryColor,
                       fontWeight: FontWeight.bold,
                     ),

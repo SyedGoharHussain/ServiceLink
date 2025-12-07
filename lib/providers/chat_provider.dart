@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../services/chat_service.dart';
 import '../services/firestore_service.dart';
+import '../services/fcm_notification_service.dart';
 import '../models/chat_model.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
@@ -10,6 +11,7 @@ import '../models/user_model.dart';
 class ChatProvider with ChangeNotifier {
   final ChatService _chatService = ChatService();
   final FirestoreService _firestoreService = FirestoreService();
+  final FCMNotificationService _fcmService = FCMNotificationService();
 
   List<ChatModel> _chats = [];
   List<MessageModel> _currentMessages = [];
@@ -37,7 +39,9 @@ class ChatProvider with ChangeNotifier {
         .getUserChats(userId)
         .listen(
           (chats) {
+            // Sort chats: unread messages first, then by last message time
             _chats = chats;
+            _sortChats(userId);
             notifyListeners();
           },
           onError: (error) {
@@ -46,6 +50,21 @@ class ChatProvider with ChangeNotifier {
             notifyListeners();
           },
         );
+  }
+
+  /// Sort chats by unread count and last message time
+  void _sortChats(String userId) {
+    _chats.sort((a, b) {
+      final aUnread = a.unreadCount[userId] ?? 0;
+      final bUnread = b.unreadCount[userId] ?? 0;
+
+      // If one has unread and other doesn't, unread comes first
+      if (aUnread > 0 && bUnread == 0) return -1;
+      if (aUnread == 0 && bUnread > 0) return 1;
+
+      // Both have unread or both don't have unread, sort by time
+      return b.lastMessageTime.compareTo(a.lastMessageTime);
+    });
   }
 
   /// Load messages for a specific chat
@@ -82,8 +101,25 @@ class ChatProvider with ChangeNotifier {
         senderId: senderId,
         senderName: senderName,
         text: text.trim(),
-        isViewingChat: isViewingChat,
+        isViewingChat: false, // Always send notification - let service decide
       );
+
+      // Get recipient ID from chatId
+      final chatParticipants = chatId.split('_');
+      final recipientId = chatParticipants.firstWhere(
+        (id) => id != senderId,
+        orElse: () => '',
+      );
+
+      // Always send FCM notification - recipient will get it if not viewing
+      if (recipientId.isNotEmpty) {
+        await _fcmService.sendChatNotification(
+          recipientId: recipientId,
+          senderName: senderName,
+          message: text.trim(),
+          chatId: chatId,
+        );
+      }
 
       return true;
     } catch (e) {

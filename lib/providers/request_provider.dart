@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
+import '../services/fcm_notification_service.dart';
 import '../models/request_model.dart';
 
 /// Provider for managing job requests
 class RequestProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
   final NotificationService _notificationService = NotificationService();
+  final FCMNotificationService _fcmService = FCMNotificationService();
 
   List<RequestModel> _requests = [];
   bool _isLoading = false;
@@ -34,6 +36,7 @@ class RequestProvider with ChangeNotifier {
     double? latitude,
     double? longitude,
     String? locationAddress,
+    int deadlineHours = 24,
   }) async {
     try {
       _isLoading = true;
@@ -53,11 +56,20 @@ class RequestProvider with ChangeNotifier {
         latitude: latitude,
         longitude: longitude,
         locationAddress: locationAddress,
+        deadlineHours: deadlineHours,
       );
 
       final requestId = await _firestoreService.createRequest(request);
 
-      // Send notification to worker only
+      // Send FCM notification to worker
+      await _fcmService.sendNewRequestNotification(
+        workerId: workerId,
+        customerName: customerName,
+        serviceType: serviceType,
+        requestId: requestId,
+      );
+
+      // Also store in Firestore for backup
       await _notificationService.sendRequestNotification(
         recipientId: workerId,
         title: 'New Service Request',
@@ -99,16 +111,29 @@ class RequestProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
+      // Find the request to calculate deadline
+      final request = _requests.firstWhere((r) => r.requestId == requestId);
+      final acceptedAt = DateTime.now();
+      final deadlineTime = acceptedAt.add(
+        Duration(hours: request.deadlineHours),
+      );
+
       await _firestoreService.updateRequestStatus(
         requestId: requestId,
         status: 'accepted',
-        acceptedAt: DateTime.now(),
+        acceptedAt: acceptedAt,
+        deadlineTime: deadlineTime,
       );
 
-      // Find the request to get customer details
-      final request = _requests.firstWhere((r) => r.requestId == requestId);
+      // Send FCM notification to customer
+      await _fcmService.sendRequestAcceptedNotification(
+        customerId: request.customerId,
+        workerName: request.workerName,
+        serviceType: request.serviceType,
+        requestId: requestId,
+      );
 
-      // Send notification to customer
+      // Also store in Firestore for backup
       await _notificationService.sendRequestNotification(
         recipientId: request.customerId,
         title: 'Request Accepted',
@@ -177,7 +202,15 @@ class RequestProvider with ChangeNotifier {
       // Find the request to get customer details
       final request = _requests.firstWhere((r) => r.requestId == requestId);
 
-      // Send notification to customer
+      // Send FCM notification to customer
+      await _fcmService.sendTaskCompletedNotification(
+        customerId: request.customerId,
+        workerName: request.workerName,
+        serviceType: request.serviceType,
+        requestId: requestId,
+      );
+
+      // Also store in Firestore for backup
       await _notificationService.sendRequestNotification(
         recipientId: request.customerId,
         title: 'Task Completed',

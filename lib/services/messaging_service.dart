@@ -182,18 +182,38 @@ class MessagingService {
   }
 
   /// Update user's FCM token in Firestore
-  Future<void> updateUserToken(String userId) async {
+  /// Returns false if user document not found
+  Future<bool> updateUserToken(String userId) async {
     try {
       final token = await getToken();
 
       if (token != null) {
+        // Check if user document exists first
+        final userDoc = await _firestore
+            .collection(AppConstants.usersCollection)
+            .doc(userId)
+            .get();
+
+        if (!userDoc.exists) {
+          print('User document not found for $userId');
+          return false;
+        }
+
         await _firestore
             .collection(AppConstants.usersCollection)
             .doc(userId)
             .update({'fcmToken': token});
+
+        return true;
       }
+      return true;
     } catch (e) {
       print('Failed to update user token: $e');
+      // If document not found, return false
+      if (e.toString().contains('not-found')) {
+        return false;
+      }
+      return true; // For other errors, don't force logout
     }
   }
 

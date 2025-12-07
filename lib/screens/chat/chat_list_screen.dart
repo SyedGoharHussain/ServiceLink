@@ -104,28 +104,54 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     final timestamp = DateTime.fromMillisecondsSinceEpoch(
                       chat.lastMessageTime.millisecondsSinceEpoch,
                     );
+                    final unreadCount =
+                        chat.unreadCount[authProvider.userModel!.uid] ?? 0;
+                    final hasUnread = unreadCount > 0;
 
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      leading: CircleAvatar(
-                        radius: 28,
-                        backgroundColor: AppConstants.primaryColor,
-                        child: Text(
-                          otherUser.name[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
+                      leading: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: AppConstants.primaryColor,
+                            child: Text(
+                              otherUser.name[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ),
+                          if (hasUnread)
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: AppConstants.primaryColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       title: Text(
                         otherUser.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
+                        style: TextStyle(
+                          fontWeight: hasUnread
+                              ? FontWeight.bold
+                              : FontWeight.w600,
                           fontSize: 16,
                         ),
                       ),
@@ -138,17 +164,56 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: hasUnread
+                                ? Colors.black87
+                                : Colors.grey.shade600,
                             fontSize: 14,
+                            fontWeight: hasUnread
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                         ),
                       ),
-                      trailing: Text(
-                        _formatTimestamp(timestamp),
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 12,
-                        ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _formatTimestamp(timestamp),
+                            style: TextStyle(
+                              color: hasUnread
+                                  ? AppConstants.primaryColor
+                                  : Colors.grey.shade500,
+                              fontSize: 12,
+                              fontWeight: hasUnread
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          if (hasUnread) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppConstants.primaryColor,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                unreadCount > 99
+                                    ? '99+'
+                                    : unreadCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       onTap: () {
                         Navigator.push(

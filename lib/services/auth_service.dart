@@ -82,23 +82,34 @@ class AuthService {
     String? password,
   }) async {
     try {
-      final userMap = UserModel(
+      print('Creating user profile for UID: $uid');
+      
+      final userModel = UserModel(
         uid: uid,
         email: email,
         name: name,
         role: role,
-      ).toMap();
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
 
-      // Store password hash for password reset purposes
+      final userMap = userModel.toMap();
+
+      // Store password hash for password reset purposes (email signup only)
       if (password != null) {
         userMap['password'] = password;
       }
 
+      print('Saving user data to Firestore: ${AppConstants.usersCollection}/$uid');
+      
       await _firestore
           .collection(AppConstants.usersCollection)
           .doc(uid)
-          .set(userMap);
+          .set(userMap, SetOptions(merge: false));
+      
+      print('User profile created successfully');
     } catch (e) {
+      print('Error creating user profile: $e');
       throw Exception('Failed to create user profile: $e');
     }
   }
