@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
-import '../../services/notification_service.dart';
 import '../../models/message_model.dart';
 import '../../utils/constants.dart';
 
@@ -29,10 +28,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Tell notification service user is viewing this chat
-    NotificationService().setCurrentlyViewingChat(widget.chatId);
-
     // Load messages and mark as read when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = context.read<AuthProvider>();
@@ -52,9 +47,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   @override
   void dispose() {
-    // Tell notification service user is no longer viewing this chat
-    NotificationService().setCurrentlyViewingChat(null);
-
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();

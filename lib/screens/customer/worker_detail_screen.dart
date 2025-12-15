@@ -23,7 +23,6 @@ class WorkerDetailScreen extends StatefulWidget {
 class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
-  int _selectedDeadlineHours = 24;
 
   @override
   void dispose() {
@@ -36,7 +35,6 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
     // Capture the parent context before dialog
     final parentContext = context;
     bool shareLocation = true;
-    int deadlineHours = _selectedDeadlineHours;
 
     await showDialog(
       context: context,
@@ -64,30 +62,6 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
                       prefixIcon: Icon(Icons.description),
                     ),
                     maxLines: 4,
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<int>(
-                    value: deadlineHours,
-                    decoration: const InputDecoration(
-                      labelText: 'Deadline (Hours)',
-                      prefixIcon: Icon(Icons.timer),
-                      border: OutlineInputBorder(),
-                    ),
-                    items: List.generate(24, (index) => index + 1)
-                        .map(
-                          (hours) => DropdownMenuItem(
-                            value: hours,
-                            child: Text(
-                              '$hours ${hours == 1 ? 'hour' : 'hours'}',
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        deadlineHours = value ?? 24;
-                      });
-                    },
                   ),
                   const SizedBox(height: 16),
                   CheckboxListTile(
@@ -209,7 +183,6 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
                       latitude: latitude,
                       longitude: longitude,
                       locationAddress: locationAddress,
-                      deadlineHours: deadlineHours,
                     );
 
                     if (!mounted) return;

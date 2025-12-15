@@ -12,9 +12,6 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  // Track which chat user is currently viewing (to suppress notifications)
-  String? _currentlyViewingChatId;
-
   /// Initialize local notifications
   Future<void> initialize() async {
     const androidSettings = AndroidInitializationSettings(
@@ -139,11 +136,6 @@ class NotificationService {
     );
   }
 
-  /// Set which chat user is currently viewing
-  void setCurrentlyViewingChat(String? chatId) {
-    _currentlyViewingChatId = chatId;
-  }
-
   /// Listen to user's notifications collection (call this after login)
   void listenToNotifications(String userId) {
     _firestore
@@ -157,25 +149,12 @@ class NotificationService {
           for (var change in snapshot.docChanges) {
             if (change.type == DocumentChangeType.added) {
               final data = change.doc.data()!;
-
-              // Check if this is a chat notification for the currently viewing chat
-              final isChatNotification = data['type'] == 'chat';
-              final notificationChatId = data['chatId'] as String?;
-              final isViewingThisChat =
-                  isChatNotification &&
-                  notificationChatId != null &&
-                  notificationChatId == _currentlyViewingChatId;
-
-              // Only show notification if user is NOT viewing this chat
-              if (!isViewingThisChat) {
-                showLocalNotification(
-                  title: data['title'] ?? 'New Notification',
-                  body: data['body'] ?? '',
-                  payload: data['type'],
-                );
-              }
-
-              // Always mark as read
+              showLocalNotification(
+                title: data['title'] ?? 'New Notification',
+                body: data['body'] ?? '',
+                payload: data['type'],
+              );
+              // Mark as read
               change.doc.reference.update({'read': true});
             }
           }

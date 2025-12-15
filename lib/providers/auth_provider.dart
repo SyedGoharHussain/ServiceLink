@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/messaging_service.dart';
-import '../services/fcm_notification_service.dart';
 import '../models/user_model.dart';
 
 /// Provider for authentication and user state management
@@ -11,7 +10,6 @@ class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
   final MessagingService _messagingService = MessagingService();
-  final FCMNotificationService _fcmService = FCMNotificationService();
 
   User? _firebaseUser;
   UserModel? _userModel;
@@ -31,18 +29,8 @@ class AuthProvider with ChangeNotifier {
 
     // Load profile if user is already logged in
     if (_firebaseUser != null) {
-      _fetchUserProfile(_firebaseUser!.uid).then((_) async {
-        if (_userModel != null) {
-          final tokenUpdated = await _messagingService.updateUserToken(
-            _firebaseUser!.uid,
-          );
-          if (!tokenUpdated) {
-            print('User document not found. Signing out...');
-            await signOut();
-            return;
-          }
-          await _fcmService.initialize(_firebaseUser!.uid);
-        }
+      _fetchUserProfile(_firebaseUser!.uid).then((_) {
+        _messagingService.updateUserToken(_firebaseUser!.uid);
       });
     }
 
@@ -52,17 +40,7 @@ class AuthProvider with ChangeNotifier {
 
       if (user != null) {
         await _fetchUserProfile(user.uid);
-        if (_userModel != null) {
-          final tokenUpdated = await _messagingService.updateUserToken(
-            user.uid,
-          );
-          if (!tokenUpdated) {
-            print('User document not found. Signing out...');
-            await signOut();
-            return;
-          }
-          await _fcmService.initialize(user.uid);
-        }
+        await _messagingService.updateUserToken(user.uid);
       } else {
         _userModel = null;
       }
@@ -75,27 +53,11 @@ class AuthProvider with ChangeNotifier {
   Future<void> _fetchUserProfile(String uid) async {
     try {
       _userModel = await _firestoreService.getUser(uid);
-
-      // If user profile not found, sign out
-      if (_userModel == null) {
-        print('User profile not found in database. Signing out...');
-        await signOut();
-        return;
-      }
-
       notifyListeners();
     } catch (e) {
       print('Error loading user profile: $e');
       _errorMessage = e.toString();
-
-      // If user document not found, sign out
-      if (e.toString().contains('not-found') ||
-          e.toString().contains('No user found')) {
-        print('User document not found. Signing out...');
-        await signOut();
-      } else {
-        notifyListeners();
-      }
+      notifyListeners();
     }
   }
 
@@ -115,25 +77,7 @@ class AuthProvider with ChangeNotifier {
       _firebaseUser = userCredential.user;
       if (_firebaseUser != null) {
         await _fetchUserProfile(_firebaseUser!.uid);
-
-        // If user profile not found, already signed out in _fetchUserProfile
-        if (_userModel == null) {
-          _isLoading = false;
-          _errorMessage = 'User account not found. Please contact support.';
-          notifyListeners();
-          return false;
-        }
-
-        final tokenUpdated = await _messagingService.updateUserToken(
-          _firebaseUser!.uid,
-        );
-        if (!tokenUpdated) {
-          await signOut();
-          _isLoading = false;
-          _errorMessage = 'User account not found. Please contact support.';
-          notifyListeners();
-          return false;
-        }
+        await _messagingService.updateUserToken(_firebaseUser!.uid);
       }
 
       _isLoading = false;
@@ -228,46 +172,18 @@ class AuthProvider with ChangeNotifier {
   /// Complete Google sign-in with role selection
   Future<bool> completeGoogleSignIn(String name, String role) async {
     try {
-      _isLoading = true;
-      _errorMessage = null;
-      notifyListeners();
+      if (_firebaseUser == null) return false;
 
-      // Get current Firebase user
-      final currentUser = _authService.currentUser;
-      if (currentUser == null) {
-        throw Exception('No authenticated user found');
-      }
-
-      print('Creating user profile for: ${currentUser.email}');
-      
       await _authService.createUserProfile(
-        uid: currentUser.uid,
-        email: currentUser.email!,
+        uid: _firebaseUser!.uid,
+        email: _firebaseUser!.email!,
         name: name,
         role: role,
       );
 
-      print('User profile created, fetching profile...');
-      await _fetchUserProfile(currentUser.uid);
-      
-      if (_userModel == null) {
-        throw Exception('Failed to load user profile after creation');
-      }
-
-      // Update FCM token
-      final tokenUpdated = await _messagingService.updateUserToken(
-        currentUser.uid,
-      );
-      if (tokenUpdated) {
-        await _fcmService.initialize(currentUser.uid);
-      }
-
-      _isLoading = false;
-      notifyListeners();
+      await _fetchUserProfile(_firebaseUser!.uid);
       return true;
     } catch (e) {
-      print('Error completing Google sign-in: $e');
-      _isLoading = false;
       _errorMessage = e.toString();
       notifyListeners();
       return false;

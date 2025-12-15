@@ -96,13 +96,15 @@ class ChatService {
         'unreadCount': unreadCount,
       });
 
-      // Always send notification - user will receive it via Firestore listener
-      await _notificationService.sendChatNotification(
-        recipientId: recipientId,
-        senderName: senderName,
-        message: text,
-        chatId: chatId,
-      );
+      // Only send notification if recipient is not viewing the chat
+      if (!isViewingChat) {
+        await _notificationService.sendChatNotification(
+          recipientId: recipientId,
+          senderName: senderName,
+          message: text,
+          chatId: chatId,
+        );
+      }
     } catch (e) {
       throw Exception('Failed to send message: $e');
     }

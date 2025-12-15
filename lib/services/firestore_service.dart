@@ -113,7 +113,6 @@ class FirestoreService {
     required String status,
     DateTime? acceptedAt,
     DateTime? completedAt,
-    DateTime? deadlineTime,
   }) async {
     try {
       final updateData = <String, dynamic>{'status': status};
@@ -124,10 +123,6 @@ class FirestoreService {
 
       if (completedAt != null) {
         updateData['completedAt'] = Timestamp.fromDate(completedAt);
-      }
-
-      if (deadlineTime != null) {
-        updateData['deadlineTime'] = Timestamp.fromDate(deadlineTime);
       }
 
       await _firestore

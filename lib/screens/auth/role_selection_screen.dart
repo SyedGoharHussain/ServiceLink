@@ -64,27 +64,20 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     final authProvider = context.read<AuthProvider>();
     bool success;
 
-    try {
-      // If coming from email signup
-      if (widget.email != null && widget.password != null) {
-        print('Completing email signup...');
-        success = await authProvider.signUpWithEmail(
-          email: widget.email!,
-          password: widget.password!,
-          name: _nameController.text.trim(),
-          role: _selectedRole!,
-        );
-      } else {
-        // If coming from Google sign-in
-        print('Completing Google sign-in with role: $_selectedRole and name: ${_nameController.text.trim()}');
-        success = await authProvider.completeGoogleSignIn(
-          _nameController.text.trim(),
-          _selectedRole!,
-        );
-      }
-    } catch (e) {
-      print('Error in _completeSignup: $e');
-      success = false;
+    // If coming from email signup
+    if (widget.email != null && widget.password != null) {
+      success = await authProvider.signUpWithEmail(
+        email: widget.email!,
+        password: widget.password!,
+        name: _nameController.text.trim(),
+        role: _selectedRole!,
+      );
+    } else {
+      // If coming from Google sign-in
+      success = await authProvider.completeGoogleSignIn(
+        _nameController.text.trim(),
+        _selectedRole!,
+      );
     }
 
     if (!mounted) return;
@@ -94,17 +87,13 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     });
 
     if (!success) {
-      final errorMsg = authProvider.errorMessage ?? 'Signup failed';
-      print('Role selection signup failed: $errorMsg');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(errorMsg),
+          content: Text(authProvider.errorMessage ?? 'Signup failed'),
           backgroundColor: AppConstants.errorColor,
-          duration: const Duration(seconds: 5),
         ),
       );
     } else {
-      print('Role selection signup successful');
       // If email signup, navigate to email verification
       if (widget.email != null && widget.password != null) {
         Navigator.of(context).pushReplacement(

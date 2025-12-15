@@ -4,7 +4,6 @@ import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/request_provider.dart';
 import '../../services/messaging_service.dart';
-import '../../services/image_base64_service.dart';
 import '../../utils/constants.dart';
 import '../customer/customer_home_screen.dart';
 import '../worker/worker_home_screen.dart';
@@ -116,23 +115,7 @@ class _MainScreenState extends State<MainScreen> {
         // Update FCM token
         final authProvider = context.read<AuthProvider>();
         if (authProvider.userModel != null) {
-          final tokenUpdated = await messagingService.updateUserToken(
-            authProvider.userModel!.uid,
-          );
-          if (!tokenUpdated) {
-            // User document not found, sign out
-            await authProvider.signOut();
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'User account not found. Please sign in again.',
-                  ),
-                  backgroundColor: AppConstants.errorColor,
-                ),
-              );
-            }
-          }
+          await messagingService.updateUserToken(authProvider.userModel!.uid);
         }
       }
     }
@@ -285,28 +268,16 @@ class _MainScreenState extends State<MainScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     CircleAvatar(
-                      radius: 36,
+                      radius: 32,
                       backgroundColor: Colors.white,
-                      backgroundImage: ImageBase64Service.base64ToImageProvider(
-                        authProvider.userModel?.profileImage,
+                      child: Text(
+                        authProvider.userModel?.name[0].toUpperCase() ?? 'U',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: AppConstants.primaryColor,
+                        ),
                       ),
-                      child:
-                          ImageBase64Service.base64ToImageProvider(
-                                authProvider.userModel?.profileImage,
-                              ) ==
-                              null
-                          ? Text(
-                              (authProvider.userModel?.name.isNotEmpty == true
-                                  ? authProvider.userModel!.name[0]
-                                        .toUpperCase()
-                                  : 'U'),
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: AppConstants.primaryColor,
-                              ),
-                            )
-                          : null,
                     ),
                     const SizedBox(height: 12),
                     Text(

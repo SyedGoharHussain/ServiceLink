@@ -36,43 +36,6 @@ class RequestCard extends StatelessWidget {
     return request.status[0].toUpperCase() + request.status.substring(1);
   }
 
-  String _getDeadlineText() {
-    if (request.status == AppConstants.statusAccepted &&
-        request.deadlineTime != null) {
-      final now = DateTime.now();
-      final deadline = request.deadlineTime!;
-      final remaining = deadline.difference(now);
-
-      if (remaining.isNegative) {
-        final overdue = now.difference(deadline);
-        if (overdue.inHours > 0) {
-          return 'Overdue by ${overdue.inHours}h';
-        } else {
-          return 'Overdue by ${overdue.inMinutes}m';
-        }
-      } else {
-        if (remaining.inHours > 0) {
-          return '${remaining.inHours}h ${remaining.inMinutes % 60}m left';
-        } else {
-          return '${remaining.inMinutes}m left';
-        }
-      }
-    } else if (request.status == AppConstants.statusPending) {
-      return 'Deadline: ${request.deadlineHours}h';
-    }
-    return '';
-  }
-
-  Color _getDeadlineColor() {
-    if (request.status == AppConstants.statusAccepted &&
-        request.deadlineTime != null) {
-      final remaining = request.deadlineTime!.difference(DateTime.now());
-      if (remaining.isNegative) return AppConstants.errorColor;
-      if (remaining.inHours < 2) return AppConstants.warningColor;
-    }
-    return AppConstants.textSecondaryColor;
-  }
-
   Future<void> _openMap(double latitude, double longitude) async {
     // Try Google Maps URL first
     final googleMapsUrl = Uri.parse(
@@ -99,10 +62,12 @@ class RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      elevation: 2,
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppConstants.paddingMedium,
+        vertical: AppConstants.paddingSmall,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppConstants.paddingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -111,43 +76,25 @@ class RequestCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        request.serviceType,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        request.customerName,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppConstants.textSecondaryColor,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                  child: Text(
+                    request.serviceType,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
+                    horizontal: 12,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: _getStatusColor().withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     _getStatusText(),
                     style: TextStyle(
                       color: _getStatusColor(),
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -155,143 +102,148 @@ class RequestCard extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: AppConstants.paddingSmall),
 
-            // Location, date and budget in one row
+            // Customer/Worker name
+            Text(
+              'Customer: ${request.customerName}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppConstants.textSecondaryColor,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            const SizedBox(height: 4),
+
+            // Location and date
             Row(
               children: [
                 const Icon(
                   Icons.location_on,
-                  size: 12,
+                  size: 14,
                   color: AppConstants.textSecondaryColor,
                 ),
-                const SizedBox(width: 2),
+                const SizedBox(width: 4),
                 Flexible(
                   child: Text(
                     request.city,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                    style: Theme.of(context).textTheme.bodySmall,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 const Icon(
                   Icons.calendar_today,
-                  size: 12,
+                  size: 14,
                   color: AppConstants.textSecondaryColor,
                 ),
-                const SizedBox(width: 2),
+                const SizedBox(width: 4),
                 Text(
-                  DateFormat('MMM dd').format(request.createdAt),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(fontSize: 11),
-                ),
-                const Spacer(),
-                Text(
-                  '\$${request.price.toStringAsFixed(0)}',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppConstants.primaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  DateFormat('MMM dd, yyyy').format(request.createdAt),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
 
-            // Deadline indicator
-            if (_getDeadlineText().isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Icon(Icons.timer, size: 12, color: _getDeadlineColor()),
-                  const SizedBox(width: 3),
-                  Text(
-                    _getDeadlineText(),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: _getDeadlineColor(),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+            // Map Location Button - show for workers only
+            if (request.latitude != null && request.longitude != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppConstants.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppConstants.primaryColor.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: InkWell(
+                  onTap: () => _openMap(request.latitude!, request.longitude!),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 20,
+                          color: AppConstants.primaryColor,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'View Location on Map',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: AppConstants.primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.open_in_new,
+                          size: 16,
+                          color: AppConstants.primaryColor,
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ],
 
-            const SizedBox(height: 6),
+            const SizedBox(height: AppConstants.paddingSmall),
 
             // Description
             Text(
               request.description,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodyMedium,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
 
-            // Location shared indicator and map button
+            const SizedBox(height: AppConstants.paddingSmall),
+
+            // Budget
+            Text(
+              'Budget: \$${request.price.toStringAsFixed(0)}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppConstants.primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            // Location shared indicator
             if (request.latitude != null && request.longitude != null) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   const Icon(
                     Icons.check_circle,
-                    size: 12,
+                    size: 16,
                     color: AppConstants.successColor,
                   ),
-                  const SizedBox(width: 3),
-                  Text(
-                    'Location shared',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppConstants.successColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const Spacer(),
-                  InkWell(
-                    onTap: () =>
-                        _openMap(request.latitude!, request.longitude!),
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      'Location shared',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppConstants.successColor,
+                        fontWeight: FontWeight.w500,
                       ),
-                      decoration: BoxDecoration(
-                        color: AppConstants.primaryColor.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: AppConstants.primaryColor.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.map,
-                            size: 12,
-                            color: AppConstants.primaryColor,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            'View Map',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: AppConstants.primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 10,
-                                ),
-                          ),
-                        ],
-                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
             ],
 
-            const SizedBox(height: 8),
+            const SizedBox(height: AppConstants.paddingSmall),
 
             // Actions
             Column(
