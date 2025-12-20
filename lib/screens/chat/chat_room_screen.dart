@@ -12,10 +12,10 @@ class ChatRoomScreen extends StatefulWidget {
   final String otherUserName;
 
   const ChatRoomScreen({
-    Key? key,
+    super.key,
     required this.chatId,
     required this.otherUserName,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatRoomScreen> createState() => _ChatRoomScreenState();
@@ -271,7 +271,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 class _DateSeparator extends StatelessWidget {
   final DateTime timestamp;
 
-  const _DateSeparator({Key? key, required this.timestamp}) : super(key: key);
+  const _DateSeparator({required this.timestamp});
 
   @override
   Widget build(BuildContext context) {
@@ -319,8 +319,7 @@ class _MessageBubble extends StatelessWidget {
   final MessageModel message;
   final bool isMe;
 
-  const _MessageBubble({Key? key, required this.message, required this.isMe})
-    : super(key: key);
+  const _MessageBubble({required this.message, required this.isMe});
 
   @override
   Widget build(BuildContext context) {

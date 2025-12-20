@@ -9,7 +9,6 @@ import 'providers/request_provider.dart';
 import 'providers/worker_provider.dart';
 import 'providers/chat_provider.dart';
 import 'services/messaging_service.dart';
-import 'services/notification_service.dart';
 import 'screens/others/splash_screen.dart';
 import 'screens/auth/signin_screen.dart';
 import 'screens/others/main_screen.dart';
@@ -21,11 +20,7 @@ import 'utils/constants.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  print('Handling background message: ${message.messageId}');
-  print('Title: ${message.notification?.title}');
-  print('Body: ${message.notification?.body}');
-  print('Data: ${message.data}');
-
+  
   // Show local notification even when app is closed
   final localNotifications = FlutterLocalNotificationsPlugin();
 
@@ -118,11 +113,7 @@ class _AppInitializerState extends State<AppInitializer> {
 
   Future<void> _initializeApp() async {
     try {
-      // Initialize FREE local notifications (no billing!)
-      final notificationService = NotificationService();
-      await notificationService.initialize();
-
-      // Initialize FCM for basic token management (free tier)
+      // Initialize unified messaging service
       final messagingService = MessagingService();
       await messagingService.initialize();
       messagingService.setupMessageHandlers();
@@ -131,6 +122,7 @@ class _AppInitializerState extends State<AppInitializer> {
         _initialized = true;
       });
     } catch (e) {
+      print('App initialization error: $e');
       setState(() {
         _error = true;
       });
@@ -148,24 +140,61 @@ class _AppInitializerState extends State<AppInitializer> {
     if (_error) {
       return Scaffold(
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              const Text('Failed to initialize app'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _error = false;
-                    _initialized = false;
-                  });
-                  _initializeApp();
-                },
-                child: const Text('Retry'),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppConstants.errorColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    size: 64,
+                    color: AppConstants.errorColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Failed to initialize app',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please check your internet connection and try again.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppConstants.textSecondaryColor,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: 200,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _error = false;
+                        _initialized = false;
+                      });
+                      _initializeApp();
+                    },
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -203,8 +232,8 @@ class AuthWrapper extends StatelessWidget {
 
         // Show main screen if authenticated with complete profile
         if (authProvider.isAuthenticated && authProvider.userModel != null) {
-          // Start FREE notification listener for this user
-          NotificationService().listenToNotifications(
+          // Start notification listener for this user
+          MessagingService().listenToNotifications(
             authProvider.userModel!.uid,
           );
           return const MainScreen();

@@ -10,10 +10,10 @@ class WorkerAllReviewsScreen extends StatelessWidget {
   final String workerName;
 
   const WorkerAllReviewsScreen({
-    Key? key,
+    super.key,
     required this.workerId,
     required this.workerName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +185,7 @@ class WorkerAllReviewsScreen extends StatelessWidget {
 class _ReviewCard extends StatelessWidget {
   final RequestModel request;
 
-  const _ReviewCard({Key? key, required this.request}) : super(key: key);
+  const _ReviewCard({required this.request});
 
   @override
   Widget build(BuildContext context) {

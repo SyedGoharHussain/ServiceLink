@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../utils/constants.dart';
 
-/// Messaging service for handling push notifications
+/// Unified Messaging service for handling all push notifications via Firebase Messaging
 class MessagingService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -14,8 +14,12 @@ class MessagingService {
   factory MessagingService() => _instance;
   MessagingService._internal();
 
+  bool _isInitialized = false;
+
   /// Initialize local notifications
   Future<void> _initializeLocalNotifications() async {
+    if (_isInitialized) return;
+    
     // Android settings
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
@@ -35,10 +39,7 @@ class MessagingService {
 
     await _localNotifications.initialize(
       initSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        print('Notification tapped: ${response.payload}');
-        // Handle notification tap
-      },
+      onDidReceiveNotificationResponse: _handleNotificationTap,
     );
 
     // Create notification channel for Android
@@ -56,10 +57,18 @@ class MessagingService {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.createNotificationChannel(androidChannel);
+    
+    _isInitialized = true;
+  }
+
+  /// Handle notification tap
+  void _handleNotificationTap(NotificationResponse response) {
+    print('Notification tapped: ${response.payload}');
+    // Navigation will be handled by the app based on payload
   }
 
   /// Show local notification
-  Future<void> _showLocalNotification({
+  Future<void> showLocalNotification({
     required String title,
     required String body,
     String? payload,
@@ -131,7 +140,6 @@ class MessagingService {
       // Listen to token refresh
       _messaging.onTokenRefresh.listen((newToken) {
         print('FCM Token refreshed: $newToken');
-        // Update token in Firestore if user is logged in
       });
 
       // Setup message handlers
@@ -191,6 +199,7 @@ class MessagingService {
             .collection(AppConstants.usersCollection)
             .doc(userId)
             .update({'fcmToken': token});
+        print('FCM token updated for user: $userId');
       }
     } catch (e) {
       print('Failed to update user token: $e');
@@ -207,7 +216,7 @@ class MessagingService {
         print('Message notification: ${message.notification}');
 
         // Show local notification when app is in foreground
-        await _showLocalNotification(
+        await showLocalNotification(
           title: message.notification!.title ?? 'New Notification',
           body: message.notification!.body ?? '',
           payload: message.data.toString(),
@@ -224,18 +233,136 @@ class MessagingService {
     // Handle notification opened from background/terminated state
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('Notification opened from background: ${message.data}');
-      // Navigate to appropriate screen based on notification data
-      // This will be handled in the UI layer
     });
 
     // Check for initial message (when app is opened from terminated state)
     _messaging.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) {
-        print(
-          'App opened from terminated state via notification: ${message.data}',
-        );
-        // Handle navigation
+        print('App opened from terminated state via notification: ${message.data}');
       }
     });
+  }
+
+  // ==================== Notification Sending Methods ====================
+
+  /// Send chat notification (stores in Firestore for the recipient)
+  Future<void> sendChatNotification({
+    required String recipientId,
+    required String senderName,
+    required String message,
+    required String chatId,
+  }) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(recipientId)
+          .collection('notifications')
+          .add({
+            'type': 'chat',
+            'title': 'New message from $senderName',
+            'body': message.length > 50 ? '${message.substring(0, 50)}...' : message,
+            'chatId': chatId,
+            'senderName': senderName,
+            'timestamp': FieldValue.serverTimestamp(),
+            'read': false,
+          });
+    } catch (e) {
+      print('Error sending chat notification: $e');
+    }
+  }
+
+  /// Send request notification
+  Future<void> sendRequestNotification({
+    required String recipientId,
+    required String title,
+    required String body,
+    required String requestId,
+  }) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(recipientId)
+          .collection('notifications')
+          .add({
+            'type': 'request',
+            'title': title,
+            'body': body,
+            'requestId': requestId,
+            'timestamp': FieldValue.serverTimestamp(),
+            'read': false,
+          });
+    } catch (e) {
+      print('Error sending request notification: $e');
+    }
+  }
+
+  /// Send new request pending notification to worker
+  Future<void> sendRequestPendingNotification({
+    required String workerId,
+    required String customerName,
+    required String serviceType,
+    required String requestId,
+  }) async {
+    await sendRequestNotification(
+      recipientId: workerId,
+      title: 'New Service Request',
+      body: '$customerName requested $serviceType service',
+      requestId: requestId,
+    );
+  }
+
+  /// Send request accepted notification to customer
+  Future<void> sendRequestAcceptedNotification({
+    required String customerId,
+    required String workerName,
+    required String serviceType,
+    required String requestId,
+  }) async {
+    await sendRequestNotification(
+      recipientId: customerId,
+      title: 'Request Accepted!',
+      body: '$workerName accepted your $serviceType request',
+      requestId: requestId,
+    );
+  }
+
+  /// Send request completed notification to customer
+  Future<void> sendRequestCompletedNotification({
+    required String customerId,
+    required String workerName,
+    required String serviceType,
+    required String requestId,
+  }) async {
+    await sendRequestNotification(
+      recipientId: customerId,
+      title: 'Task Completed!',
+      body: '$workerName completed your $serviceType task',
+      requestId: requestId,
+    );
+  }
+
+  /// Listen to user's notifications collection
+  void listenToNotifications(String userId) {
+    _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .where('read', isEqualTo: false)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+          for (var change in snapshot.docChanges) {
+            if (change.type == DocumentChangeType.added) {
+              final data = change.doc.data()!;
+              showLocalNotification(
+                title: data['title'] ?? 'New Notification',
+                body: data['body'] ?? '',
+                payload: data['type'],
+              );
+              // Mark as read
+              change.doc.reference.update({'read': true});
+            }
+          }
+        });
   }
 }

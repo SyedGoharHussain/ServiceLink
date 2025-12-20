@@ -4,7 +4,7 @@ import 'role_selection_screen.dart';
 
 /// Sign-up screen for new users
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
+  const SignUpScreen({super.key});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -183,7 +183,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   decoration: InputDecoration(
-                    labelText: 'Enter your password',
+                    labelText: 'Confirm Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -229,6 +229,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         : const Text('Sign Up', style: TextStyle(fontSize: 16)),
                   ),
                 ),
+
+                const SizedBox(height: 24),
               ],
             ),
           ),

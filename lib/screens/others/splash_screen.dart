@@ -17,6 +17,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  bool _hasNavigated = false;
 
   @override
   void initState() {
@@ -26,19 +27,63 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     )..repeat();
 
-    // If navigateToDashboard is true, navigate after 5 seconds
     if (widget.navigateToDashboard) {
-      Future.delayed(const Duration(seconds: 5), () {
-        if (mounted) {
-          final authProvider = context.read<AuthProvider>();
-          if (authProvider.isAuthenticated && authProvider.userModel != null) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MainScreen()),
-            );
-          }
-        }
-      });
+      _navigateWhenReady();
     }
+  }
+
+  Future<void> _navigateWhenReady() async {
+    // Wait minimum animation time (1.5 seconds) for nice visual effect
+    await Future.delayed(const Duration(milliseconds: 1500));
+    
+    if (!mounted || _hasNavigated) return;
+    
+    final authProvider = context.read<AuthProvider>();
+    
+    // Check if already authenticated
+    if (authProvider.isAuthenticated && authProvider.userModel != null) {
+      _navigateToMain();
+      return;
+    }
+    
+    // Wait for auth to initialize (max 3 seconds)
+    int waitCount = 0;
+    while (waitCount < 6 && mounted && !_hasNavigated) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      waitCount++;
+      
+      if (authProvider.isAuthenticated && authProvider.userModel != null) {
+        _navigateToMain();
+        return;
+      }
+    }
+    
+    // If still authenticated but no user model, try refresh
+    if (authProvider.isAuthenticated && authProvider.userModel == null) {
+      try {
+        await authProvider.refreshUserProfile();
+        if (mounted && authProvider.userModel != null && !_hasNavigated) {
+          _navigateToMain();
+        }
+      } catch (e) {
+        debugPrint('Splash refresh error: $e');
+      }
+    }
+  }
+
+  void _navigateToMain() {
+    if (_hasNavigated || !mounted) return;
+    _hasNavigated = true;
+    
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const MainScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
   }
 
   @override
@@ -51,80 +96,111 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppConstants.primaryColor,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // App Logo/Title
-            const Text(
-              AppConstants.appName,
-              style: TextStyle(
-                fontSize: 42,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 1.5,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Spacer(flex: 2),
+              
+              // App Logo/Title
+              const Text(
+                AppConstants.appName,
+                style: TextStyle(
+                  fontSize: 42,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1.5,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              AppConstants.appSlogan,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-                fontWeight: FontWeight.w400,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 60),
-
-            // Animated circular loader with service icons
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Center dot
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      // Rotating icons
-                      ..._buildRotatingIcons(),
-                    ],
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 40),
-            Text(
-              widget.navigateToDashboard ? 'Welcome back!' : 'Loading...',
-              style: const TextStyle(
-                fontSize: 18,
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            if (widget.navigateToDashboard) ...[
               const SizedBox(height: 8),
               const Text(
-                'Loading your dashboard...',
+                AppConstants.appSlogan,
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.white70,
-                  fontWeight: FontWeight.w300,
+                  fontWeight: FontWeight.w400,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const Spacer(),
+
+              // Animated circular loader with service icons
+              SizedBox(
+                width: 200,
+                height: 200,
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Center pulsing dot
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.8, end: 1.2),
+                          duration: const Duration(milliseconds: 800),
+                          builder: (context, value, child) {
+                            return Container(
+                              width: 12 * value,
+                              height: 12 * value,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.9),
+                                shape: BoxShape.circle,
+                              ),
+                            );
+                          },
+                        ),
+                        // Rotating icons
+                        ..._buildRotatingIcons(),
+                      ],
+                    );
+                  },
+                ),
+              ),
+
+              const Spacer(),
+              
+              // Status text
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: Text(
+                  widget.navigateToDashboard ? 'Welcome back!' : 'Loading...',
+                  key: ValueKey(widget.navigateToDashboard),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (widget.navigateToDashboard) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Preparing your dashboard...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+              ],
+              
+              const Spacer(flex: 2),
+              
+              // Version/copyright at bottom
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Text(
+                  'Version 1.0.0',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.5),
+                  ),
                 ),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -132,12 +208,12 @@ class _SplashScreenState extends State<SplashScreen>
 
   List<Widget> _buildRotatingIcons() {
     final icons = [
-      {'icon': Icons.construction, 'label': 'Carpenter'},
-      {'icon': Icons.plumbing, 'label': 'Plumber'},
-      {'icon': Icons.electrical_services, 'label': 'Electrician'},
-      {'icon': Icons.build, 'label': 'Mechanic'},
-      {'icon': Icons.format_paint, 'label': 'Painter'},
-      {'icon': Icons.handyman, 'label': 'Handyman'},
+      Icons.construction,
+      Icons.plumbing,
+      Icons.electrical_services,
+      Icons.build,
+      Icons.format_paint,
+      Icons.handyman,
     ];
 
     return List.generate(icons.length, (index) {
@@ -167,7 +243,7 @@ class _SplashScreenState extends State<SplashScreen>
               ],
             ),
             child: Icon(
-              icons[index]['icon'] as IconData,
+              icons[index],
               color: AppConstants.primaryColor,
               size: 28,
             ),

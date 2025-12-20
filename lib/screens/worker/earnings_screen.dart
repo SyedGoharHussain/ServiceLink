@@ -6,7 +6,7 @@ import '../../utils/constants.dart';
 
 /// Screen to display earnings from completed tasks
 class EarningsScreen extends StatefulWidget {
-  const EarningsScreen({Key? key}) : super(key: key);
+  const EarningsScreen({super.key});
 
   @override
   State<EarningsScreen> createState() => _EarningsScreenState();
@@ -222,7 +222,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                     ),
                   ),
                 );
-              }).toList(),
+              }),
           ],
         ),
       ),

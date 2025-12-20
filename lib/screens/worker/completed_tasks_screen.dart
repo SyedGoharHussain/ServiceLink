@@ -10,7 +10,7 @@ import '../../widgets/review_dialog.dart';
 
 /// Screen to display completed tasks
 class CompletedTasksScreen extends StatefulWidget {
-  const CompletedTasksScreen({Key? key}) : super(key: key);
+  const CompletedTasksScreen({super.key});
 
   @override
   State<CompletedTasksScreen> createState() => _CompletedTasksScreenState();
@@ -75,10 +75,9 @@ class _CompletedTaskCard extends StatelessWidget {
   final bool isWorker;
 
   const _CompletedTaskCard({
-    Key? key,
     required this.request,
     required this.isWorker,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -7,7 +7,7 @@ import '../../widgets/request_card.dart';
 
 /// Requests screen showing all job requests
 class RequestsScreen extends StatefulWidget {
-  const RequestsScreen({Key? key}) : super(key: key);
+  const RequestsScreen({super.key});
 
   @override
   State<RequestsScreen> createState() => _RequestsScreenState();

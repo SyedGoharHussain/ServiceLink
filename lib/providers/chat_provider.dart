@@ -13,7 +13,7 @@ class ChatProvider with ChangeNotifier {
 
   List<ChatModel> _chats = [];
   List<MessageModel> _currentMessages = [];
-  bool _isLoading = false;
+  final bool _isLoading = false;
   String? _errorMessage;
   StreamSubscription<List<ChatModel>>? _chatsSubscription;
   StreamSubscription<List<MessageModel>>? _messagesSubscription;

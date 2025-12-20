@@ -8,7 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Screen to display all reviews for a worker
 class WorkerReviewsScreen extends StatelessWidget {
-  const WorkerReviewsScreen({Key? key}) : super(key: key);
+  const WorkerReviewsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -175,7 +175,7 @@ class WorkerReviewsScreen extends StatelessWidget {
 class _ReviewCard extends StatelessWidget {
   final RequestModel request;
 
-  const _ReviewCard({Key? key, required this.request}) : super(key: key);
+  const _ReviewCard({required this.request});
 
   @override
   Widget build(BuildContext context) {

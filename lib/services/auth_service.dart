@@ -142,8 +142,16 @@ class AuthService {
         return 'This sign-in method is not enabled.';
       case 'user-disabled':
         return 'This account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please wait a few minutes and try again.';
+      case 'network-request-failed':
+        return 'Network error. Please check your internet connection.';
+      case 'invalid-credential':
+        return 'Invalid credentials. Please check your email and password.';
+      case 'account-exists-with-different-credential':
+        return 'An account already exists with this email using a different sign-in method.';
       default:
-        return 'Authentication error: ${e.message}';
+        return 'Authentication error: ${e.message ?? e.code}';
     }
   }
 
@@ -161,7 +169,7 @@ class AuthService {
 
       // Configure action code settings for email verification
       final actionCodeSettings = ActionCodeSettings(
-        url: 'https://mids-project-6b09c.firebaseapp.com/__/auth/action',
+        url: 'https://servicelink-3061a.firebaseapp.com/__/auth/action',
         handleCodeInApp: true,
         androidPackageName: 'com.example.mids_project',
         androidInstallApp: true,
@@ -195,7 +203,7 @@ class AuthService {
     try {
       // Configure action code settings for password reset
       final actionCodeSettings = ActionCodeSettings(
-        url: 'https://mids-project-6b09c.firebaseapp.com/__/auth/action',
+        url: 'https://servicelink-3061a.firebaseapp.com/__/auth/action',
         handleCodeInApp: false,
         androidPackageName: 'com.example.mids_project',
         androidInstallApp: true,

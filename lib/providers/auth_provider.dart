@@ -145,6 +145,9 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
 
       final userCredential = await _authService.signInWithGoogle();
+      
+      // Set firebase user immediately
+      _firebaseUser = userCredential.user;
 
       // Check if user profile exists
       final exists = await _authService.userProfileExists(
@@ -157,6 +160,10 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return false;
       }
+
+      // Existing user - load profile and update token
+      await _fetchUserProfile(_firebaseUser!.uid);
+      await _messagingService.updateUserToken(_firebaseUser!.uid);
 
       _isLoading = false;
       notifyListeners();
@@ -172,7 +179,14 @@ class AuthProvider with ChangeNotifier {
   /// Complete Google sign-in with role selection
   Future<bool> completeGoogleSignIn(String name, String role) async {
     try {
-      if (_firebaseUser == null) return false;
+      if (_firebaseUser == null) {
+        _errorMessage = 'No user session found. Please sign in again.';
+        notifyListeners();
+        return false;
+      }
+
+      _isLoading = true;
+      notifyListeners();
 
       await _authService.createUserProfile(
         uid: _firebaseUser!.uid,
@@ -182,8 +196,13 @@ class AuthProvider with ChangeNotifier {
       );
 
       await _fetchUserProfile(_firebaseUser!.uid);
+      await _messagingService.updateUserToken(_firebaseUser!.uid);
+
+      _isLoading = false;
+      notifyListeners();
       return true;
     } catch (e) {
+      _isLoading = false;
       _errorMessage = e.toString();
       notifyListeners();
       return false;

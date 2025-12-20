@@ -7,8 +7,7 @@ class LoadingSplashScreen extends StatefulWidget {
   final String message;
   final Widget? child;
 
-  const LoadingSplashScreen({Key? key, this.message = 'Loading...', this.child})
-    : super(key: key);
+  const LoadingSplashScreen({super.key, this.message = 'Loading...', this.child});
 
   @override
   State<LoadingSplashScreen> createState() => _LoadingSplashScreenState();

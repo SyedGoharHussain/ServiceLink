@@ -9,8 +9,7 @@ class WorkerCard extends StatelessWidget {
   final UserModel worker;
   final VoidCallback onTap;
 
-  const WorkerCard({Key? key, required this.worker, required this.onTap})
-    : super(key: key);
+  const WorkerCard({super.key, required this.worker, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -52,13 +51,17 @@ class WorkerCard extends StatelessWidget {
                     Text(
                       worker.name,
                       style: Theme.of(context).textTheme.titleMedium,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${worker.serviceType ?? "Professional"}',
+                      worker.serviceType ?? "Professional",
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppConstants.textSecondaryColor,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -69,9 +72,13 @@ class WorkerCard extends StatelessWidget {
                           color: AppConstants.textSecondaryColor,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          worker.city ?? 'Not specified',
-                          style: Theme.of(context).textTheme.bodySmall,
+                        Expanded(
+                          child: Text(
+                            worker.city ?? 'Not specified',
+                            style: Theme.of(context).textTheme.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                       ],
                     ),

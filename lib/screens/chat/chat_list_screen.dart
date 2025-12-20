@@ -8,7 +8,7 @@ import 'chat_room_screen.dart';
 
 /// Chat list screen showing all conversations
 class ChatListScreen extends StatefulWidget {
-  const ChatListScreen({Key? key}) : super(key: key);
+  const ChatListScreen({super.key});
 
   @override
   State<ChatListScreen> createState() => _ChatListScreenState();

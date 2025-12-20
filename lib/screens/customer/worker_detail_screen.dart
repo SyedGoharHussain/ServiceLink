@@ -14,7 +14,7 @@ import '../worker/worker_all_reviews_screen.dart';
 class WorkerDetailScreen extends StatefulWidget {
   final UserModel worker;
 
-  const WorkerDetailScreen({Key? key, required this.worker}) : super(key: key);
+  const WorkerDetailScreen({super.key, required this.worker});
 
   @override
   State<WorkerDetailScreen> createState() => _WorkerDetailScreenState();
@@ -577,8 +577,7 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
 class _ReviewsSectionWidget extends StatelessWidget {
   final String workerId;
 
-  const _ReviewsSectionWidget({Key? key, required this.workerId})
-    : super(key: key);
+  const _ReviewsSectionWidget({required this.workerId});
 
   @override
   Widget build(BuildContext context) {
@@ -678,7 +677,7 @@ class _ReviewsSectionWidget extends StatelessWidget {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         );
       },
