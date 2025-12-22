@@ -6,6 +6,7 @@ class UserModel {
   final String email;
   final String name;
   final String role; // 'customer' or 'worker'
+  final String? phone; // Phone number for calling feature
   final String? city;
   final String?
   serviceType; // For workers: 'carpenter', 'plumber', 'electrician', 'mechanic', etc.
@@ -23,6 +24,7 @@ class UserModel {
     required this.email,
     required this.name,
     required this.role,
+    this.phone,
     this.city,
     this.serviceType,
     this.rate,
@@ -43,6 +45,7 @@ class UserModel {
       'email': email,
       'name': name,
       'role': role,
+      'phone': phone,
       'city': city,
       'serviceType': serviceType,
       'rate': rate,
@@ -63,6 +66,7 @@ class UserModel {
       email: map['email'] ?? '',
       name: map['name'] ?? '',
       role: map['role'] ?? 'customer',
+      phone: map['phone'],
       city: map['city'],
       serviceType: map['serviceType'],
       rate: map['rate']?.toDouble(),
@@ -82,6 +86,7 @@ class UserModel {
     String? email,
     String? name,
     String? role,
+    String? phone,
     String? city,
     String? serviceType,
     double? rate,
@@ -98,6 +103,7 @@ class UserModel {
       email: email ?? this.email,
       name: name ?? this.name,
       role: role ?? this.role,
+      phone: phone ?? this.phone,
       city: city ?? this.city,
       serviceType: serviceType ?? this.serviceType,
       rate: rate ?? this.rate,

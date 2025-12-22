@@ -38,15 +38,13 @@ class _SignInScreenState extends State<SignInScreen>
         curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
       ),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+          ),
+        );
     _animationController.forward();
   }
 
@@ -71,7 +69,9 @@ class _SignInScreenState extends State<SignInScreen>
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: isError ? AppConstants.errorColor : AppConstants.successColor,
+        backgroundColor: isError
+            ? AppConstants.errorColor
+            : AppConstants.successColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
@@ -96,7 +96,10 @@ class _SignInScreenState extends State<SignInScreen>
         (route) => false,
       );
     } else {
-      _showSnackBar(authProvider.errorMessage ?? 'Sign in failed', isError: true);
+      _showSnackBar(
+        authProvider.errorMessage ?? 'Sign in failed',
+        isError: true,
+      );
     }
   }
 
@@ -148,12 +151,12 @@ class _SignInScreenState extends State<SignInScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 20),
-                    
+
                     // Logo and welcome text
                     _buildHeader(context),
-                    
+
                     const SizedBox(height: 40),
-                    
+
                     // Email field
                     _buildInputField(
                       controller: _emailController,
@@ -165,15 +168,17 @@ class _SignInScreenState extends State<SignInScreen>
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
                         }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        if (!RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(value)) {
                           return 'Please enter a valid email';
                         }
                         return null;
                       },
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Password field
                     _buildInputField(
                       controller: _passwordController,
@@ -183,10 +188,14 @@ class _SignInScreenState extends State<SignInScreen>
                       obscureText: _obscurePassword,
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
                           color: AppConstants.textSecondaryColor,
                         ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -198,14 +207,16 @@ class _SignInScreenState extends State<SignInScreen>
                         return null;
                       },
                     ),
-                    
+
                     // Forgot password
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordScreen(),
+                          ),
                         ),
                         child: Text(
                           'Forgot Password?',
@@ -216,27 +227,27 @@ class _SignInScreenState extends State<SignInScreen>
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Sign in button
                     _buildSignInButton(),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Divider
                     _buildDivider(),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Google sign in
                     _buildGoogleButton(),
-                    
+
                     const SizedBox(height: 40),
-                    
+
                     // Sign up link
                     _buildSignUpLink(),
-                    
+
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -252,10 +263,11 @@ class _SignInScreenState extends State<SignInScreen>
     return Column(
       children: [
         Container(
-          width: 100,
-          height: 100,
+          width: 120,
+          height: 120,
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppConstants.primaryColor,
+            color: Colors.white,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -265,24 +277,22 @@ class _SignInScreenState extends State<SignInScreen>
               ),
             ],
           ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/logo.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => const Icon(
-                Icons.handyman_rounded,
-                size: 50,
-                color: Colors.white,
-              ),
+          child: Image.asset(
+            'assets/images/logo.png',
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => Icon(
+              Icons.handyman_rounded,
+              size: 60,
+              color: AppConstants.primaryColor,
             ),
           ),
         ),
         const SizedBox(height: 24),
         Text(
           'Welcome Back!',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
@@ -333,7 +343,10 @@ class _SignInScreenState extends State<SignInScreen>
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: AppConstants.errorColor),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 18,
+        ),
       ),
       validator: validator,
     );
@@ -349,16 +362,24 @@ class _SignInScreenState extends State<SignInScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: AppConstants.primaryColor,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               elevation: 0,
             ),
             child: authProvider.isLoading
                 ? const SizedBox(
                     height: 24,
                     width: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
                   )
-                : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                : const Text(
+                    'Sign In',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
           ),
         );
       },
@@ -373,7 +394,9 @@ class _SignInScreenState extends State<SignInScreen>
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'or continue with',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppConstants.textSecondaryColor),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppConstants.textSecondaryColor,
+            ),
           ),
         ),
         Expanded(child: Container(height: 1, color: Colors.grey.shade300)),
@@ -388,7 +411,9 @@ class _SignInScreenState extends State<SignInScreen>
         onPressed: _signInWithGoogle,
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: Colors.grey.shade300),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           backgroundColor: Colors.white,
         ),
         child: Row(
@@ -406,14 +431,25 @@ class _SignInScreenState extends State<SignInScreen>
                   shape: BoxShape.circle,
                 ),
                 child: const Center(
-                  child: Text('G', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
+                  child: Text(
+                    'G',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 12),
             Text(
               'Continue with Google',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppConstants.textPrimaryColor),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppConstants.textPrimaryColor,
+              ),
             ),
           ],
         ),
@@ -425,10 +461,24 @@ class _SignInScreenState extends State<SignInScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text("Don't have an account? ", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppConstants.textSecondaryColor)),
+        Text(
+          "Don't have an account? ",
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppConstants.textSecondaryColor,
+          ),
+        ),
         TextButton(
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignUpScreen())),
-          child: Text('Sign Up', style: TextStyle(color: AppConstants.primaryColor, fontWeight: FontWeight.w600)),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SignUpScreen()),
+          ),
+          child: Text(
+            'Sign Up',
+            style: TextStyle(
+              color: AppConstants.primaryColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
     );

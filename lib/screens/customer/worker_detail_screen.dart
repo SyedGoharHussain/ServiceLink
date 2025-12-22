@@ -8,6 +8,8 @@ import '../../models/request_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/request_provider.dart';
 import '../../utils/constants.dart';
+import '../../widgets/profile_completion_dialog.dart';
+import '../others/profile_screen.dart';
 import '../worker/worker_all_reviews_screen.dart';
 
 /// Worker detail screen showing full profile and hire option
@@ -29,6 +31,33 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
     _priceController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  /// Check if customer profile is complete before allowing hire
+  void _checkProfileAndHire() {
+    final authProvider = context.read<AuthProvider>();
+    final user = authProvider.userModel;
+
+    if (!ProfileCompletionHelper.isCustomerProfileComplete(user)) {
+      final missingFields = ProfileCompletionHelper.getMissingCustomerFields(user);
+      
+      ProfileCompletionHelper.showProfileCompletionDialog(
+        context,
+        title: 'Complete Your Profile',
+        message: 'Please complete your profile before sending a job request. This helps workers contact you.',
+        missingFields: missingFields,
+        onCompleteProfile: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
+        },
+      );
+      return;
+    }
+
+    // Profile is complete, show hire dialog
+    _showHireDialog();
   }
 
   Future<void> _showHireDialog() async {
@@ -183,6 +212,7 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
                       latitude: latitude,
                       longitude: longitude,
                       locationAddress: locationAddress,
+                      customerPhone: customer.phone,
                     );
 
                     if (!mounted) return;
@@ -564,7 +594,7 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _showHireDialog,
+            onPressed: _checkProfileAndHire,
             child: const Text('Hire Now'),
           ),
         ),

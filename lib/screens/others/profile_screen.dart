@@ -24,6 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   late TextEditingController _nameController;
   late TextEditingController _cityController;
+  late TextEditingController _phoneController;
   late TextEditingController _rateController;
   late TextEditingController _descriptionController;
   String? _selectedServiceType;
@@ -35,6 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final user = context.read<AuthProvider>().userModel;
     _nameController = TextEditingController(text: user?.name);
     _cityController = TextEditingController(text: user?.city);
+    _phoneController = TextEditingController(text: user?.phone);
     _rateController = TextEditingController(text: user?.rate?.toString());
     _descriptionController = TextEditingController(text: user?.description);
     _selectedServiceType = user?.serviceType;
@@ -58,6 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         setState(() {
           _nameController.text = user?.name ?? '';
           _cityController.text = user?.city ?? '';
+          _phoneController.text = user?.phone ?? '';
           _rateController.text = user?.rate?.toString() ?? '';
           _descriptionController.text = user?.description ?? '';
           _selectedServiceType = user?.serviceType;
@@ -73,6 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     WidgetsBinding.instance.removeObserver(this);
     _nameController.dispose();
     _cityController.dispose();
+    _phoneController.dispose();
     _rateController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -101,6 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final updatedUser = user.copyWith(
       name: _nameController.text,
       city: _cityController.text,
+      phone: _phoneController.text.isNotEmpty ? _phoneController.text : null,
       serviceType: _selectedServiceType,
       rate: double.tryParse(_rateController.text),
       description: _descriptionController.text,
@@ -342,6 +347,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           children: [
             _buildInfoRow(Icons.person_outline, 'Name', user.name),
             _buildInfoRow(Icons.email_outlined, 'Email', user.email),
+            _buildPhoneInfoRow(user),
             _buildInfoRow(Icons.location_on_outlined, 'City', user.city ?? 'Not set'),
           ],
         ),
@@ -449,7 +455,51 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  Widget _buildPhoneInfoRow(dynamic user) {
+    final hasPhone = user.phone != null && user.phone!.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(Icons.phone_outlined, size: 20, color: AppConstants.textSecondaryColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Phone',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppConstants.textSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text(
+                      hasPhone ? user.phone! : 'Not set',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppConstants.textPrimaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEditForm(bool isWorker) {
+    final authProvider = context.read<AuthProvider>();
+    final user = authProvider.userModel;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -487,6 +537,8 @@ class _ProfileScreenState extends State<ProfileScreen>
           
           _buildTextField(_nameController, 'Name', Icons.person_outline),
           const SizedBox(height: 16),
+          _buildPhoneFieldWithVerification(user),
+          const SizedBox(height: 16),
           _buildTextField(_cityController, 'City', Icons.location_on_outlined),
           
           if (isWorker) ...[
@@ -507,15 +559,50 @@ class _ProfileScreenState extends State<ProfileScreen>
     String label,
     IconData icon, {
     bool isNumber = false,
+    bool isPhone = false,
     int maxLines = 1,
   }) {
+    TextInputType keyboardType = TextInputType.text;
+    if (isNumber) {
+      keyboardType = TextInputType.number;
+    } else if (isPhone) {
+      keyboardType = TextInputType.phone;
+    }
+
     return TextFormField(
       controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      keyboardType: keyboardType,
       maxLines: maxLines,
       decoration: InputDecoration(
         labelText: label,
+        hintText: isPhone ? '+1 234 567 8900' : null,
         prefixIcon: Icon(icon, color: AppConstants.primaryColor),
+        filled: true,
+        fillColor: AppConstants.backgroundColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppConstants.primaryColor, width: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhoneFieldWithVerification(dynamic user) {
+    return TextFormField(
+      controller: _phoneController,
+      keyboardType: TextInputType.phone,
+      decoration: InputDecoration(
+        labelText: 'Phone Number',
+        hintText: '+1 234 567 8900',
+        prefixIcon: Icon(Icons.phone_outlined, color: AppConstants.primaryColor),
         filled: true,
         fillColor: AppConstants.backgroundColor,
         border: OutlineInputBorder(

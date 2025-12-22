@@ -109,11 +109,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           Positioned.fill(
             child: Center(
               child: Opacity(
-                opacity: 0.4,
+                opacity: 0.05,
                 child: Image.asset(
                   'assets/images/logo.png',
-                  width: 300,
-                  height: 300,
+                  width: 250,
+                  height: 250,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return const SizedBox.shrink();

@@ -5,8 +5,10 @@ class RequestModel {
   final String requestId;
   final String customerId;
   final String customerName;
+  final String? customerPhone; // Customer phone for calling
   final String workerId;
   final String workerName;
+  final String? workerPhone; // Worker phone for calling
   final String serviceType;
   final String city;
   final double price; // Proposed price by customer
@@ -25,8 +27,10 @@ class RequestModel {
     required this.requestId,
     required this.customerId,
     required this.customerName,
+    this.customerPhone,
     required this.workerId,
     required this.workerName,
+    this.workerPhone,
     required this.serviceType,
     required this.city,
     required this.price,
@@ -48,8 +52,10 @@ class RequestModel {
       'requestId': requestId,
       'customerId': customerId,
       'customerName': customerName,
+      'customerPhone': customerPhone,
       'workerId': workerId,
       'workerName': workerName,
+      'workerPhone': workerPhone,
       'serviceType': serviceType,
       'city': city,
       'price': price,
@@ -74,8 +80,10 @@ class RequestModel {
       requestId: map['requestId'] ?? '',
       customerId: map['customerId'] ?? '',
       customerName: map['customerName'] ?? '',
+      customerPhone: map['customerPhone'],
       workerId: map['workerId'] ?? '',
       workerName: map['workerName'] ?? '',
+      workerPhone: map['workerPhone'],
       serviceType: map['serviceType'] ?? '',
       city: map['city'] ?? '',
       price: (map['price'] ?? 0.0).toDouble(),
@@ -97,8 +105,10 @@ class RequestModel {
     String? requestId,
     String? customerId,
     String? customerName,
+    String? customerPhone,
     String? workerId,
     String? workerName,
+    String? workerPhone,
     String? serviceType,
     String? city,
     double? price,
@@ -117,8 +127,10 @@ class RequestModel {
       requestId: requestId ?? this.requestId,
       customerId: customerId ?? this.customerId,
       customerName: customerName ?? this.customerName,
+      customerPhone: customerPhone ?? this.customerPhone,
       workerId: workerId ?? this.workerId,
       workerName: workerName ?? this.workerName,
+      workerPhone: workerPhone ?? this.workerPhone,
       serviceType: serviceType ?? this.serviceType,
       city: city ?? this.city,
       price: price ?? this.price,

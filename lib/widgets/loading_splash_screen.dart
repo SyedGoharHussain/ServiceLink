@@ -7,7 +7,11 @@ class LoadingSplashScreen extends StatefulWidget {
   final String message;
   final Widget? child;
 
-  const LoadingSplashScreen({super.key, this.message = 'Loading...', this.child});
+  const LoadingSplashScreen({
+    super.key,
+    this.message = 'Loading...',
+    this.child,
+  });
 
   @override
   State<LoadingSplashScreen> createState() => _LoadingSplashScreenState();
@@ -47,8 +51,9 @@ class _LoadingSplashScreenState extends State<LoadingSplashScreen>
                 return Transform.rotate(
                   angle: _controller.value * 2 * math.pi,
                   child: Container(
-                    width: 100,
-                    height: 100,
+                    width: 120,
+                    height: 120,
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
@@ -60,10 +65,14 @@ class _LoadingSplashScreenState extends State<LoadingSplashScreen>
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.handyman,
-                      size: 50,
-                      color: AppConstants.primaryColor,
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.handyman,
+                        size: 60,
+                        color: AppConstants.primaryColor,
+                      ),
                     ),
                   ),
                 );

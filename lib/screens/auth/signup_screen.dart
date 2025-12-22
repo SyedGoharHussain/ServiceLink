@@ -91,6 +91,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
               children: [
                 const SizedBox(height: 20),
 
+                // Logo
+                Center(
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppConstants.primaryColor.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.handyman_rounded,
+                        size: 50,
+                        color: AppConstants.primaryColor,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
                 // Title
                 Text(
                   'Welcome to\n${AppConstants.appName}!',

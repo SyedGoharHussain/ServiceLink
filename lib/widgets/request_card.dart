@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/worker_provider.dart';
 import '../utils/constants.dart';
 import '../screens/chat/chat_room_screen.dart';
+import '../services/call_service.dart';
 import './review_dialog.dart';
 
 /// Request card widget for displaying job requests
@@ -74,6 +75,66 @@ class RequestCard extends StatelessWidget {
     } catch (e) {
       // Silent fail
     }
+  }
+
+  void _makeCall(
+    BuildContext context, {
+    required String otherUserId,
+    String? personName,
+    required String personRole,
+    String? phoneNumber,
+  }) {
+    final authProvider = context.read<AuthProvider>();
+    final currentUserId = authProvider.userModel?.uid;
+
+    if (currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to make call. Please try again.'),
+          backgroundColor: AppConstants.errorColor,
+        ),
+      );
+      return;
+    }
+
+    CallService().showCallDialog(
+      context,
+      currentUserId: currentUserId,
+      otherUserId: otherUserId,
+      otherUserName: personName ?? personRole,
+      otherUserRole: personRole,
+      phoneNumber: phoneNumber,
+    );
+  }
+
+  Widget _buildCallButton(
+    BuildContext context, {
+    required String otherUserId,
+    String? personName,
+    required String personRole,
+    String? phoneNumber,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => _makeCall(
+          context,
+          otherUserId: otherUserId,
+          personName: personName,
+          personRole: personRole,
+          phoneNumber: phoneNumber,
+        ),
+        icon: const Icon(Icons.call_outlined, size: 18),
+        label: Text('Call $personRole'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.green,
+          side: BorderSide(color: Colors.green.withOpacity(0.5)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -332,62 +393,123 @@ class RequestCard extends StatelessWidget {
         final isCustomer = authProvider.userModel?.uid == request.customerId;
 
         if (request.status == AppConstants.statusPending && isWorker) {
-          return Row(
+          return Column(
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    context.read<RequestProvider>().rejectRequest(
-                      request.requestId,
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppConstants.errorColor,
-                    side: BorderSide(
-                      color: AppConstants.errorColor.withOpacity(0.5),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text('Reject'),
-                ),
+              // Call button for worker to call customer
+              _buildCallButton(
+                context,
+                otherUserId: request.customerId,
+                personName: request.customerName,
+                personRole: 'Customer',
+                phoneNumber: request.customerPhone,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final success = await context
-                        .read<RequestProvider>()
-                        .acceptRequest(request.requestId);
-                    if (success && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Request accepted!')),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConstants.successColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        context.read<RequestProvider>().rejectRequest(
+                          request.requestId,
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppConstants.errorColor,
+                        side: BorderSide(
+                          color: AppConstants.errorColor.withOpacity(0.5),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('Reject'),
                     ),
                   ),
-                  child: const Text('Accept'),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final workerPhone = context.read<AuthProvider>().userModel?.phone;
+                        final success = await context
+                            .read<RequestProvider>()
+                            .acceptRequest(request.requestId, workerPhone: workerPhone);
+                        if (success && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Request accepted!')),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppConstants.successColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('Accept'),
+                    ),
+                  ),
+                ],
               ),
             ],
           );
         }
 
         if (request.status == AppConstants.statusAccepted) {
-          return Row(
+          // Determine who to call based on current user
+          final userIdToCall = isWorker ? request.customerId : request.workerId;
+          final nameToCall = isWorker ? request.customerName : request.workerName;
+          final roleToCall = isWorker ? 'Customer' : 'Worker';
+          final phoneToCall = isWorker ? request.customerPhone : request.workerPhone;
+
+          return Column(
             children: [
-              if (isWorker)
-                Expanded(
+              Row(
+                children: [
+                  // Call button
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _makeCall(
+                        context,
+                        otherUserId: userIdToCall,
+                        personName: nameToCall,
+                        personRole: roleToCall,
+                        phoneNumber: phoneToCall,
+                      ),
+                      icon: const Icon(Icons.call_outlined, size: 18),
+                      label: const Text('Call'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.green,
+                        side: BorderSide(color: Colors.green.withOpacity(0.5)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Chat button
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openChat(context),
+                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                      label: const Text('Chat'),
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (isWorker) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () => _showCompleteDialog(context),
                     icon: const Icon(Icons.check_circle_outline, size: 18),
-                    label: const Text('Complete'),
+                    label: const Text('Mark as Complete'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppConstants.successColor,
                       side: BorderSide(
@@ -399,19 +521,7 @@ class RequestCard extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (isWorker) const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _openChat(context),
-                  icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                  label: const Text('Chat'),
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ),
+              ],
             ],
           );
         }

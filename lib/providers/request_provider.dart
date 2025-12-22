@@ -34,6 +34,7 @@ class RequestProvider with ChangeNotifier {
     double? latitude,
     double? longitude,
     String? locationAddress,
+    String? customerPhone,
   }) async {
     try {
       _isLoading = true;
@@ -53,6 +54,7 @@ class RequestProvider with ChangeNotifier {
         latitude: latitude,
         longitude: longitude,
         locationAddress: locationAddress,
+        customerPhone: customerPhone,
       );
 
       final requestId = await _firestoreService.createRequest(request);
@@ -94,7 +96,7 @@ class RequestProvider with ChangeNotifier {
   }
 
   /// Accept request
-  Future<bool> acceptRequest(String requestId) async {
+  Future<bool> acceptRequest(String requestId, {String? workerPhone}) async {
     try {
       _isLoading = true;
       notifyListeners();
@@ -103,6 +105,7 @@ class RequestProvider with ChangeNotifier {
         requestId: requestId,
         status: 'accepted',
         acceptedAt: DateTime.now(),
+        workerPhone: workerPhone,
       );
 
       // Find the request to get customer details

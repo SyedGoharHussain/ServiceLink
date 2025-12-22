@@ -13,9 +13,9 @@ class RoleSelectionScreen extends StatefulWidget {
   final bool isGoogleSignIn;
 
   const RoleSelectionScreen({
-    super.key, 
-    this.name, 
-    this.email, 
+    super.key,
+    this.name,
+    this.email,
     this.password,
     this.isGoogleSignIn = false,
   });
@@ -24,7 +24,7 @@ class RoleSelectionScreen extends StatefulWidget {
   State<RoleSelectionScreen> createState() => _RoleSelectionScreenState();
 }
 
-class _RoleSelectionScreenState extends State<RoleSelectionScreen> 
+class _RoleSelectionScreenState extends State<RoleSelectionScreen>
     with SingleTickerProviderStateMixin {
   String? _selectedRole;
   final _nameController = TextEditingController();
@@ -43,7 +43,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _animationController.forward();
-    
+
     // Pre-fill name from Google sign-in
     if (widget.name != null && widget.name!.isNotEmpty) {
       _nameController.text = widget.name!;
@@ -104,7 +104,10 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
     });
 
     if (!success) {
-      _showSnackBar(authProvider.errorMessage ?? 'Signup failed', isError: true);
+      _showSnackBar(
+        authProvider.errorMessage ?? 'Signup failed',
+        isError: true,
+      );
     } else {
       // If email signup, navigate to email verification
       if (widget.email != null && widget.password != null) {
@@ -137,7 +140,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: isError ? AppConstants.errorColor : AppConstants.successColor,
+        backgroundColor: isError
+            ? AppConstants.errorColor
+            : AppConstants.successColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
@@ -149,7 +154,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final googleEmail = authProvider.firebaseUser?.email;
-    
+
     return Scaffold(
       body: SafeArea(
         child: FadeTransition(
@@ -160,29 +165,41 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                
+
                 // Header
                 Center(
                   child: Column(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        width: 100,
+                        height: 100,
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppConstants.primaryColor.withOpacity(0.1),
+                          color: Colors.white,
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppConstants.primaryColor.withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
-                        child: Icon(
-                          Icons.person_add_rounded,
-                          size: 48,
-                          color: AppConstants.primaryColor,
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.person_add_rounded,
+                            size: 50,
+                            color: AppConstants.primaryColor,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'Complete Your Profile',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -194,7 +211,10 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                       if (googleEmail != null) ...[
                         const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: AppConstants.successColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
@@ -202,7 +222,11 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.check_circle, size: 16, color: AppConstants.successColor),
+                              Icon(
+                                Icons.check_circle,
+                                size: 16,
+                                color: AppConstants.successColor,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 googleEmail,
@@ -219,7 +243,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 40),
 
                 // Role selection cards
@@ -230,7 +254,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 Row(
                   children: [
                     Expanded(
@@ -239,7 +263,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                         subtitle: 'Hire local professionals',
                         icon: Icons.search_rounded,
                         isSelected: _selectedRole == AppConstants.roleCustomer,
-                        onTap: () => setState(() => _selectedRole = AppConstants.roleCustomer),
+                        onTap: () => setState(
+                          () => _selectedRole = AppConstants.roleCustomer,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -249,7 +275,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                         subtitle: 'Get hired for jobs',
                         icon: Icons.work_rounded,
                         isSelected: _selectedRole == AppConstants.roleWorker,
-                        onTap: () => setState(() => _selectedRole = AppConstants.roleWorker),
+                        onTap: () => setState(
+                          () => _selectedRole = AppConstants.roleWorker,
+                        ),
                       ),
                     ),
                   ],
@@ -283,7 +311,10 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppConstants.primaryColor, width: 2),
+                      borderSide: BorderSide(
+                        color: AppConstants.primaryColor,
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
@@ -294,7 +325,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                 SizedBox(
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: (_isLoading || authProvider.isLoading) ? null : _completeSignup,
+                    onPressed: (_isLoading || authProvider.isLoading)
+                        ? null
+                        : _completeSignup,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppConstants.primaryColor,
                       foregroundColor: Colors.white,
@@ -328,9 +361,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                           ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Info text
                 if (_selectedRole != null)
                   AnimatedContainer(
@@ -356,9 +389,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen>
                             _selectedRole == AppConstants.roleCustomer
                                 ? 'As a customer, you can browse workers, send service requests, and chat with professionals.'
                                 : 'As a worker, you\'ll receive job requests, set your rates, and build your reputation.',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppConstants.primaryColor,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppConstants.primaryColor),
                           ),
                         ),
                       ],
@@ -400,7 +432,9 @@ class _RoleCard extends StatelessWidget {
           color: isSelected ? AppConstants.primaryColor : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppConstants.primaryColor : Colors.grey.shade200,
+            color: isSelected
+                ? AppConstants.primaryColor
+                : Colors.grey.shade200,
             width: 2,
           ),
           boxShadow: isSelected
@@ -424,8 +458,8 @@ class _RoleCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isSelected 
-                    ? Colors.white.withOpacity(0.2) 
+                color: isSelected
+                    ? Colors.white.withOpacity(0.2)
                     : AppConstants.primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
@@ -439,7 +473,9 @@ class _RoleCard extends StatelessWidget {
             Text(
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: isSelected ? Colors.white : AppConstants.textPrimaryColor,
+                color: isSelected
+                    ? Colors.white
+                    : AppConstants.textPrimaryColor,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -448,7 +484,9 @@ class _RoleCard extends StatelessWidget {
             Text(
               subtitle,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: isSelected ? Colors.white70 : AppConstants.textSecondaryColor,
+                color: isSelected
+                    ? Colors.white70
+                    : AppConstants.textSecondaryColor,
               ),
               textAlign: TextAlign.center,
             ),

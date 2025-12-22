@@ -158,6 +158,21 @@ class _MainScreenState extends State<MainScreen> {
 
     return WillPopScope(
       onWillPop: () async {
+        // Check if we can pop the current navigator (i.e., there are screens on the stack)
+        if (Navigator.of(context).canPop()) {
+          // Let the normal back navigation happen
+          return true;
+        }
+        
+        // If we're not on the home tab (index 0), go back to home tab
+        if (_currentIndex != 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+          return false; // Don't exit the app
+        }
+        
+        // We're on the home tab, handle double-press to exit
         final now = DateTime.now();
         final backButtonHasNotBeenPressedOrSnackBarIsClosed =
             _lastBackPressed == null ||

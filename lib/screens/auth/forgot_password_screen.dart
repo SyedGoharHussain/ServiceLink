@@ -120,11 +120,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               children: [
                 const SizedBox(height: 40),
 
-                // Icon
-                Icon(
-                  Icons.lock_reset,
-                  size: 80,
-                  color: AppConstants.primaryColor,
+                // Logo
+                Center(
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppConstants.primaryColor.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.lock_reset,
+                        size: 50,
+                        color: AppConstants.primaryColor,
+                      ),
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 32),

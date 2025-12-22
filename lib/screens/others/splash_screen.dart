@@ -35,29 +35,29 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateWhenReady() async {
     // Wait minimum animation time (1.5 seconds) for nice visual effect
     await Future.delayed(const Duration(milliseconds: 1500));
-    
+
     if (!mounted || _hasNavigated) return;
-    
+
     final authProvider = context.read<AuthProvider>();
-    
+
     // Check if already authenticated
     if (authProvider.isAuthenticated && authProvider.userModel != null) {
       _navigateToMain();
       return;
     }
-    
+
     // Wait for auth to initialize (max 3 seconds)
     int waitCount = 0;
     while (waitCount < 6 && mounted && !_hasNavigated) {
       await Future.delayed(const Duration(milliseconds: 500));
       waitCount++;
-      
+
       if (authProvider.isAuthenticated && authProvider.userModel != null) {
         _navigateToMain();
         return;
       }
     }
-    
+
     // If still authenticated but no user model, try refresh
     if (authProvider.isAuthenticated && authProvider.userModel == null) {
       try {
@@ -74,10 +74,11 @@ class _SplashScreenState extends State<SplashScreen>
   void _navigateToMain() {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
-    
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const MainScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const MainScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -102,8 +103,36 @@ class _SplashScreenState extends State<SplashScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(flex: 2),
-              
-              // App Logo/Title
+
+              // App Logo
+              Container(
+                width: 140,
+                height: 140,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.handyman_rounded,
+                    size: 70,
+                    color: AppConstants.primaryColor,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // App Title
               const Text(
                 AppConstants.appName,
                 style: TextStyle(
@@ -123,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const Spacer(),
 
               // Animated circular loader with service icons
@@ -160,7 +189,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
 
               const Spacer(),
-              
+
               // Status text
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
@@ -185,9 +214,9 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
               ],
-              
+
               const Spacer(flex: 2),
-              
+
               // Version/copyright at bottom
               Padding(
                 padding: const EdgeInsets.only(bottom: 20),

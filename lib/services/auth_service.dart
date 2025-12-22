@@ -171,7 +171,7 @@ class AuthService {
       final actionCodeSettings = ActionCodeSettings(
         url: 'https://servicelink-3061a.firebaseapp.com/__/auth/action',
         handleCodeInApp: true,
-        androidPackageName: 'com.example.mids_project',
+        androidPackageName: 'com.servicelink.app',
         androidInstallApp: true,
         androidMinimumVersion: '12',
       );
@@ -205,7 +205,7 @@ class AuthService {
       final actionCodeSettings = ActionCodeSettings(
         url: 'https://servicelink-3061a.firebaseapp.com/__/auth/action',
         handleCodeInApp: false,
-        androidPackageName: 'com.example.mids_project',
+        androidPackageName: 'com.servicelink.app',
         androidInstallApp: true,
         androidMinimumVersion: '12',
       );

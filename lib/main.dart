@@ -88,6 +88,12 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const AppInitializer(),
+        // Enable proper navigation handling
+        navigatorKey: GlobalKey<NavigatorState>(),
+        onGenerateRoute: (settings) {
+          // Return null to use default route handling
+          return null;
+        },
       ),
     );
   }

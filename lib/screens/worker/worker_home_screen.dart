@@ -4,6 +4,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/request_provider.dart';
 import '../../utils/constants.dart';
 import '../../widgets/request_card.dart';
+import '../../widgets/profile_completion_dialog.dart';
+import '../others/profile_screen.dart';
 
 /// Worker home screen - view and manage job requests
 class WorkerHomeScreen extends StatefulWidget {
@@ -15,12 +17,18 @@ class WorkerHomeScreen extends StatefulWidget {
 
 class _WorkerHomeScreenState extends State<WorkerHomeScreen>
     with WidgetsBindingObserver {
+  bool _hasCheckedProfile = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadRequests();
     _refreshProfile();
+    // Check profile completion after frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkProfileCompletion();
+    });
   }
 
   @override
@@ -55,6 +63,32 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen>
       }
     } catch (e) {
       print('Worker home refresh error: $e');
+    }
+  }
+
+  void _checkProfileCompletion() {
+    if (_hasCheckedProfile) return;
+    _hasCheckedProfile = true;
+
+    final authProvider = context.read<AuthProvider>();
+    final user = authProvider.userModel;
+
+    if (!ProfileCompletionHelper.isWorkerProfileComplete(user)) {
+      final missingFields = ProfileCompletionHelper.getMissingWorkerFields(user);
+      
+      ProfileCompletionHelper.showProfileCompletionDialog(
+        context,
+        title: 'Complete Your Profile',
+        message: 'Please complete your profile to start receiving job requests from customers.',
+        missingFields: missingFields,
+        onCompleteProfile: () {
+          // Navigate to profile tab (index 3 in main screen)
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
+        },
+      );
     }
   }
 
