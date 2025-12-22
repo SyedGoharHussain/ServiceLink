@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -255,14 +256,23 @@ class _MainScreenState extends State<MainScreen> {
                   child: CircleAvatar(
                     radius: 36,
                     backgroundColor: Colors.white,
-                    child: Text(
-                      authProvider.userModel?.name[0].toUpperCase() ?? 'U',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: AppConstants.primaryColor,
-                      ),
-                    ),
+                    backgroundImage: authProvider.userModel?.profileImage != null
+                        ? MemoryImage(
+                            const Base64Decoder().convert(
+                              authProvider.userModel!.profileImage!,
+                            ),
+                          )
+                        : null,
+                    child: authProvider.userModel?.profileImage == null
+                        ? Text(
+                            authProvider.userModel?.name[0].toUpperCase() ?? 'U',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: AppConstants.primaryColor,
+                            ),
+                          )
+                        : null,
                   ),
                 ),
                 const SizedBox(height: 16),
