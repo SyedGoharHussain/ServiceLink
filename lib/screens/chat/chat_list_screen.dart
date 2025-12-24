@@ -114,7 +114,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         radius: 28,
                         backgroundColor: AppConstants.primaryColor,
                         child: Text(
-                          otherUser.name[0].toUpperCase(),
+                          otherUser.name.isNotEmpty ? otherUser.name[0].toUpperCase() : 'U',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,

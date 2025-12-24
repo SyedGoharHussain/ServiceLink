@@ -31,7 +31,7 @@ class WorkerCard extends StatelessWidget {
                 ),
                 child: worker.profileImage == null
                     ? Text(
-                        worker.name[0].toUpperCase(),
+                        worker.name.isNotEmpty ? worker.name[0].toUpperCase() : 'W',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,

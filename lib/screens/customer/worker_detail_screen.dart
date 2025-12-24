@@ -425,7 +425,7 @@ class _WorkerDetailScreenState extends State<WorkerDetailScreen> {
                       color: AppConstants.primaryColor.withOpacity(0.1),
                       child: Center(
                         child: Text(
-                          widget.worker.name[0].toUpperCase(),
+                          widget.worker.name.isNotEmpty ? widget.worker.name[0].toUpperCase() : 'W',
                           style: const TextStyle(
                             fontSize: 100,
                             fontWeight: FontWeight.bold,

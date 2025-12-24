@@ -81,18 +81,32 @@ class RequestProvider with ChangeNotifier {
 
   /// Load worker's requests
   void loadWorkerRequests(String workerId) {
-    _firestoreService.getWorkerRequests(workerId).listen((requests) {
-      _requests = requests;
-      notifyListeners();
-    });
+    _firestoreService.getWorkerRequests(workerId).listen(
+      (requests) {
+        _requests = requests;
+        notifyListeners();
+      },
+      onError: (error) {
+        print('Error loading worker requests: $error');
+        _errorMessage = error.toString();
+        notifyListeners();
+      },
+    );
   }
 
   /// Load customer's requests
   void loadCustomerRequests(String customerId) {
-    _firestoreService.getCustomerRequests(customerId).listen((requests) {
-      _requests = requests;
-      notifyListeners();
-    });
+    _firestoreService.getCustomerRequests(customerId).listen(
+      (requests) {
+        _requests = requests;
+        notifyListeners();
+      },
+      onError: (error) {
+        print('Error loading customer requests: $error');
+        _errorMessage = error.toString();
+        notifyListeners();
+      },
+    );
   }
 
   /// Accept request

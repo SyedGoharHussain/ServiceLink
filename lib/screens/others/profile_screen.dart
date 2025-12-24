@@ -227,7 +227,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             : ImageBase64Service.base64ToImageProvider(user.profileImage),
                         child: (user.profileImage == null && _imageBase64 == null)
                             ? Text(
-                                user.name[0].toUpperCase(),
+                                user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
                                 style: TextStyle(
                                   fontSize: 44,
                                   fontWeight: FontWeight.bold,

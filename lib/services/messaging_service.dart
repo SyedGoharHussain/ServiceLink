@@ -348,21 +348,27 @@ class MessagingService {
         .doc(userId)
         .collection('notifications')
         .where('read', isEqualTo: false)
-        .orderBy('timestamp', descending: true)
         .snapshots()
-        .listen((snapshot) {
-          for (var change in snapshot.docChanges) {
-            if (change.type == DocumentChangeType.added) {
-              final data = change.doc.data()!;
-              showLocalNotification(
-                title: data['title'] ?? 'New Notification',
-                body: data['body'] ?? '',
-                payload: data['type'],
-              );
-              // Mark as read
-              change.doc.reference.update({'read': true});
+        .listen(
+          (snapshot) {
+            for (var change in snapshot.docChanges) {
+              if (change.type == DocumentChangeType.added) {
+                final data = change.doc.data()!;
+                showLocalNotification(
+                  title: data['title'] ?? 'New Notification',
+                  body: data['body'] ?? '',
+                  payload: data['type'],
+                );
+                // Mark as read
+                change.doc.reference.update({'read': true}).catchError((e) {
+                  print('Error marking notification as read: $e');
+                });
+              }
             }
-          }
-        });
+          },
+          onError: (error) {
+            print('Error listening to notifications: $error');
+          },
+        );
   }
 }

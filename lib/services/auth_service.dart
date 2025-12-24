@@ -7,7 +7,10 @@ import '../utils/constants.dart';
 /// Authentication service for handling user sign-in, sign-up, and sign-out
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    // Web OAuth client ID from Firebase Console (needed for Android sign-in)
+    clientId: '824927624616-qvo810pfdvqo1fo61ec98p3p338jicjt.apps.googleusercontent.com',
+  );
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Get current user
@@ -28,6 +31,9 @@ class AuthService {
       );
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
+    } catch (e) {
+      // Handle generic exceptions in release mode
+      throw Exception('Sign in failed: ${e.toString()}');
     }
   }
 
@@ -43,6 +49,9 @@ class AuthService {
       );
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
+    } catch (e) {
+      // Handle generic exceptions in release mode
+      throw Exception('Sign up failed: ${e.toString()}');
     }
   }
 

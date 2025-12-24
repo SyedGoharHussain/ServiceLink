@@ -1,10 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/request_provider.dart';
 import '../../services/messaging_service.dart';
+import '../../services/image_base64_service.dart';
 import '../../utils/constants.dart';
 import '../customer/customer_home_screen.dart';
 import '../worker/worker_home_screen.dart';
@@ -256,16 +256,16 @@ class _MainScreenState extends State<MainScreen> {
                   child: CircleAvatar(
                     radius: 36,
                     backgroundColor: Colors.white,
-                    backgroundImage: authProvider.userModel?.profileImage != null
-                        ? MemoryImage(
-                            const Base64Decoder().convert(
-                              authProvider.userModel!.profileImage!,
-                            ),
-                          )
-                        : null,
-                    child: authProvider.userModel?.profileImage == null
+                    backgroundImage: ImageBase64Service.base64ToImageProvider(
+                      authProvider.userModel?.profileImage,
+                    ),
+                    child: ImageBase64Service.base64ToImageProvider(
+                              authProvider.userModel?.profileImage,
+                            ) == null
                         ? Text(
-                            authProvider.userModel?.name[0].toUpperCase() ?? 'U',
+                            authProvider.userModel?.name.isNotEmpty == true
+                                ? authProvider.userModel!.name[0].toUpperCase()
+                                : 'U',
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
