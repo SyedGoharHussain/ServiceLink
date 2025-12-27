@@ -268,29 +268,33 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     final workerProvider = context.watch<WorkerProvider>();
     final userName = authProvider.userModel?.name.split(' ').first ?? 'there';
 
-    return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          context.read<WorkerProvider>().loadAllWorkers();
-        },
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Hero Section
-            SliverToBoxAdapter(child: _buildHeroSection(userName)),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        body: RefreshIndicator(
+          onRefresh: () async {
+            context.read<WorkerProvider>().loadAllWorkers();
+          },
+          child: CustomScrollView(
+            controller: _scrollController,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            slivers: [
+              // Hero Section
+              SliverToBoxAdapter(child: _buildHeroSection(userName)),
 
-            // Search Section
-            SliverToBoxAdapter(child: _buildSearchSection()),
+              // Search Section
+              SliverToBoxAdapter(child: _buildSearchSection()),
 
-            // Service Categories
-            SliverToBoxAdapter(child: _buildServiceCategories()),
+              // Service Categories
+              SliverToBoxAdapter(child: _buildServiceCategories()),
 
-            // Workers Header
-            SliverToBoxAdapter(child: _buildWorkersHeader(workerProvider)),
+              // Workers Header
+              SliverToBoxAdapter(child: _buildWorkersHeader(workerProvider)),
 
-            // Workers List
-            _buildWorkersList(workerProvider),
-          ],
+              // Workers List
+              _buildWorkersList(workerProvider),
+            ],
+          ),
         ),
       ),
     );

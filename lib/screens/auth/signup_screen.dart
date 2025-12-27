@@ -244,9 +244,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                 // Sign Up button
                 SizedBox(
-                  height: 50,
+                  height: 56,
+                  width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _signUp,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
                     child: _isLoading
                         ? const SizedBox(
                             height: 20,
@@ -256,7 +260,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Sign Up', style: TextStyle(fontSize: 16)),
+                        : const Text(
+                            'Sign Up',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
 
