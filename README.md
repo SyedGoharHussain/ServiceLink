@@ -3,7 +3,7 @@
 Connect with local service professionals through a cross-platform Flutter app.
 
 Features, installation, and setup instructions are provided below. This README has been updated to reflect the repository layout and existing configuration files.
-Download aap from: https://appgallery.huawei.com/app/C116494833
+Download app from: https://appgallery.huawei.com/app/C116494833
 
 ---
 
